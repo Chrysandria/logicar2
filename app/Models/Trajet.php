@@ -6,5 +6,9 @@ use Illuminate\Database\Eloquent\Model;
 
 class Trajet extends Model
 {
-    //
+    protected $fillable = ["designation"];
+
+    public function trajet_items(){
+        return $this->hasMany("trajets_items");
+    }
 }
