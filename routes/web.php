@@ -4,7 +4,10 @@ use App\Http\Controllers\AnomalieController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\CarController;
 use App\Http\Controllers\EmployeController;
+use App\Http\Controllers\ExpeditionController;
 use App\Http\Controllers\MouvementController;
+use App\Http\Controllers\PlanningController;
+use App\Http\Controllers\TrajetController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
@@ -23,7 +26,10 @@ Route::middleware('auth')->group(function () {
     Route::get('/emps/{service}', [EmployeController::class, 'index']);
     Route::get('/services', [EmployeController::class, 'services']);
 
-    Route::apiResource('anomalies', AnomalieController::class)->only(['index', 'store']);
-    Route::apiResource('cars', CarController::class);
-    Route::apiResource("/moov",MouvementController::class)->only(["index","store","update"]);
+    Route::apiResource('/anomalies', AnomalieController::class)->only(['index', 'store']);
+    Route::apiResource('/cars', CarController::class);
+    Route::apiResource('/moves',MouvementController::class)->only(['index','store','update']);
+    Route::apiResource('/expeditions',ExpeditionController::class)->only(['store','update']);
+    Route::apiResource('/plannings',PlanningController::class)->except(['update','destroy']);
+    Route::apiResource('/trajets',TrajetController::class);
 });

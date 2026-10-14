@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Trajet;
+use App\Models\TrajetItem;
 use Illuminate\Http\Request;
 
 class TrajetController extends Controller
@@ -12,7 +13,7 @@ class TrajetController extends Controller
      */
     public function index()
     {
-        //
+        return response()->json(Trajet::all());
     }
 
     /**
@@ -20,7 +21,25 @@ class TrajetController extends Controller
      */
     public function store(Request $request)
     {
-        //
+
+        $request->validate([
+            'designation' => 'required|string',
+            'trajet_items' => 'required|array',
+        ]);
+
+        $trajet = Trajet::create([
+            'designation' => $request->designation,
+        ]);
+
+        foreach ($request->trajet_items as $item) {
+            TrajetItem::create([
+                'trajet_id' => $trajet->id,
+                'point' => $item->point,
+            ]);
+        }
+
+        return response()->json('Nouveau trajet enregistré', 200);
+
     }
 
     /**
@@ -28,7 +47,7 @@ class TrajetController extends Controller
      */
     public function show(Trajet $trajet)
     {
-        //
+        return response()->json($trajet->with('trajet_items')->get());
     }
 
     /**
@@ -36,7 +55,20 @@ class TrajetController extends Controller
      */
     public function update(Request $request, Trajet $trajet)
     {
-        //
+        $request->validate([
+            'trajet_items' => 'required|array',
+        ]);
+
+        TrajetItem::where('trajet_id', $trajet->id)->delete();
+
+        foreach ($request->trajet_items as $item) {
+            TrajetItem::create([
+                'trajet_id' => $trajet->id,
+                'point' => $item->point,
+            ]);
+        }
+
+        return response()->json("Mis à jour effectué",200);
     }
 
     /**
@@ -44,6 +76,8 @@ class TrajetController extends Controller
      */
     public function destroy(Trajet $trajet)
     {
-        //
+        $trajet->delete();
+
+        return response()->noContent();
     }
 }
