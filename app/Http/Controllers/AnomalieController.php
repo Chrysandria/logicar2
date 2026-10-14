@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Anomalie;
+use App\Models\Car;
 use Illuminate\Http\Request;
 
 class AnomalieController extends Controller
@@ -12,7 +13,8 @@ class AnomalieController extends Controller
      */
     public function index()
     {
-        //
+        $anomalies = Anomalie::all()->orderByDesc("created_at");
+        return response()->json($anomalies);
     }
 
     /**
@@ -20,30 +22,19 @@ class AnomalieController extends Controller
      */
     public function store(Request $request)
     {
-        //
-    }
+        $validate = $request->validate([
+            "car_id" => "required|integer",
+            "description" => "required|string"
+        ]);
 
-    /**
-     * Display the specified resource.
-     */
-    public function show(Anomalie $anomalie)
-    {
-        //
-    }
+        Car::find($request->validate)->update([
+            "is_available" => false
+        ]);
 
-    /**
-     * Update the specified resource in storage.
-     */
-    public function update(Request $request, Anomalie $anomalie)
-    {
-        //
-    }
+        Anomalie::create($validate);
 
-    /**
-     * Remove the specified resource from storage.
-     */
-    public function destroy(Anomalie $anomalie)
-    {
-        //
+        return response()->json([
+            "Message" => "Ce véhicule a ete mis hors service"
+        ]);
     }
 }
