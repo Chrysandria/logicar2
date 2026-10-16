@@ -1,0 +1,53 @@
+<template>
+    <div class="min-vh-100 d-flex flex-column">
+        <header class="shadow-lg px-4">
+            <nav class="navbar container navbar-expand-lg navbar-light">
+                <a href="#" class="navbar-brand fs-3 fw-semibold">
+                    <Logo/>
+                </a>
+                <button
+                    class="navbar-toggler"
+                    type="button"
+                    data-bs-toggle="collapse"
+                    data-bs-target="#navbarNav"
+                >
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+                <section class="collapse navbar-collapse" id="navbarNav">
+                    <ul class="navbar-nav gap-2 ms-auto">
+                        <li class="nav-item">
+                            <router-link
+                                :to="{
+                                    name: 'public.index',
+                                }"
+                                class="btn btn-outline-primary"
+                            >
+                                <i class="bi bi-house me-2"></i>
+                                Accueil
+                            </router-link>
+                        </li>
+                        <li class="nav-item">
+                            <router-link
+                                :to="{
+                                    name: 'public.login',
+                                }"
+                                class="btn btn-primary"
+                            >
+                                <i class="bi bi-box-arrow-in-left me-2"></i>
+                                Se connecter
+                            </router-link>
+                        </li>
+                    </ul>
+                </section>
+            </nav>
+        </header>
+        <router-view />
+        <footer class="shadow-lg p-4 text-center text-muted small">
+            © Logicar {{ new Date().getFullYear() }}
+        </footer>
+    </div>
+</template>
+
+<script setup>
+import Logo from '../components/logo.vue';
+</script>
