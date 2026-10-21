@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
@@ -19,33 +20,38 @@ class AuthController extends Controller
             $user = Auth::user();
 
             return response()->json([
-                "message" => "Connection effectué",
-                "user" => $user
-            ],200);
-        };
-
-        return response()->json([
-            "message" => "Les informations saisies sont incorrectes."
-        ],403);
-    }
-
-    public function logout(Request $request){
-        if(Auth::logout()){
-            $request->session()->invalidate();
-            return response()->json([
-                "message" => "Déconnexion effectué"
-            ],200);
+                'message' => 'Connection effectué',
+                'user' => $user,
+            ], 200);
         }
 
         return response()->json([
-            "message" => "Une erreur s'est produite."
-        ],501);
+            'message' => 'Les informations saisies sont incorrectes.',
+        ], 403);
+    }
+
+    public function logout(Request $request)
+    {
+        try {
+            Auth::logout();
+            $request->session()->invalidate();
+
+            return response()->json([
+                'message' => 'Déconnexion effectué',
+            ], 200);
+        } catch (Exception $e) {
+            return response()->json([
+                "error" => $e->getMessage(),
+                "message" => "Une erreur s'est produite."
+            ],501);
+        }
 
     }
 
-    public function user(){
+    public function user()
+    {
         return response()->json([
-            "user" => Auth::user()
+            'user' => Auth::user(),
         ]);
     }
 }

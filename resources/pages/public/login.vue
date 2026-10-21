@@ -87,6 +87,7 @@
 import { ref } from "vue";
 import { useAlert } from "../../services/alert";
 import { useFetch } from "../../services/fetch";
+import { useStore } from "../../stores/authStore";
 
 const name = ref("");
 const password = ref("");
@@ -117,5 +118,6 @@ async function login() {
     };
 
     await useFetch(request);
+    useStore().getConnected();
 }
 </script>

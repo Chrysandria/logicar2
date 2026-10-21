@@ -16,10 +16,8 @@ Route::get('/', function () {
 
 Route::prefix('/auth')->controller(AuthController::class)->group(function () {
     Route::post('/login', 'login');
-    Route::middleware('auth')->group(function () {
-        Route::post('/logout', 'logout');
-        Route::get('/me', 'user');
-    });
+    Route::post('/logout', 'logout');
+    Route::get('/me', 'user');
 });
 
 Route::middleware('auth')->group(function () {
@@ -28,12 +26,12 @@ Route::middleware('auth')->group(function () {
 
     Route::apiResource('/anomalies', AnomalieController::class)->only(['index', 'store']);
     Route::apiResource('/cars', CarController::class);
-    Route::apiResource('/moves',MouvementController::class)->only(['index','store','update']);
-    Route::apiResource('/expeditions',ExpeditionController::class)->only(['store','update']);
-    Route::apiResource('/plannings',PlanningController::class)->except(['update','destroy']);
-    Route::apiResource('/trajets',TrajetController::class);
+    Route::apiResource('/moves', MouvementController::class)->only(['index', 'store', 'update']);
+    Route::apiResource('/expeditions', ExpeditionController::class)->only(['store', 'update']);
+    Route::apiResource('/plannings', PlanningController::class)->except(['update', 'destroy']);
+    Route::apiResource('/trajets', TrajetController::class);
 });
 
-Route::get('/{any}', function(){
+Route::get('/{any}', function () {
     return view('index');
-})->where('any','.*');
+})->where('any', '.*');
