@@ -9,6 +9,6 @@ class Employe extends Model
     protected $fillable = ["matricule", "service", "nom", "telephone", "lieu_ramassage", "pnt_adm", "pnt_dec"];
 
     public function planning_items(){
-        return $this->hasMany("planning_items");
+        return $this->hasMany(PlanningItem::class, 'employe_id');
     }
 }

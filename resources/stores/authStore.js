@@ -14,8 +14,10 @@ export const useStore = defineStore("auth", () => {
             let response = await axios.get("/auth/me");
             let connected = response?.data?.user;
 
+            const publicRoutes = ["/","/login"];
+
             if (!connected) {
-                if (route.path !== "/" && route.path !== "/login") {
+                if (!publicRoutes.includes(route.path)) {
                     await router.replace("/");
                 }
 
@@ -31,18 +33,16 @@ export const useStore = defineStore("auth", () => {
                 await router.replace({
                     name: "snr",
                 });
-            } else if (
-                connected.service !== "SNR" &&
-                route.path.startsWith("/snr")
-            ) {
-                await router.replace({
-                    name: "services",
-                    params: {
-                        service: connected.service,
-                    },
-                });
             }
 
+            if(connected.service !== "SNR" && route.path.startsWith("/snr") || publicRoutes.includes(route.path)){
+                await router.replace({
+                    name: "services.index",
+                    params: {
+                        service: connected.service
+                    }
+                })
+            }
             return;
         } catch (error) {
             console.error(error);

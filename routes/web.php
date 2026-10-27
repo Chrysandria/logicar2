@@ -7,6 +7,7 @@ use App\Http\Controllers\EmployeController;
 use App\Http\Controllers\ExpeditionController;
 use App\Http\Controllers\MouvementController;
 use App\Http\Controllers\PlanningController;
+use App\Http\Controllers\PlanningItemController;
 use App\Http\Controllers\TrajetController;
 use Illuminate\Support\Facades\Route;
 
@@ -21,7 +22,7 @@ Route::prefix('/auth')->controller(AuthController::class)->group(function () {
 });
 
 Route::middleware('auth')->group(function () {
-    Route::get('/emps/{service}', [EmployeController::class, 'index']);
+    Route::get('/emps', [EmployeController::class, 'index']);
     Route::get('/services', [EmployeController::class, 'services']);
 
     Route::apiResource('/anomalies', AnomalieController::class)->only(['index', 'store']);
@@ -30,6 +31,7 @@ Route::middleware('auth')->group(function () {
     Route::apiResource('/expeditions', ExpeditionController::class)->only(['store', 'update']);
     Route::apiResource('/plannings', PlanningController::class)->except(['update', 'destroy']);
     Route::apiResource('/trajets', TrajetController::class);
+    Route::get('/trigger', [PlanningItemController::class, 'find']);
 });
 
 Route::get('/{any}', function () {

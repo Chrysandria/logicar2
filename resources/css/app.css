@@ -1,2 +1,9 @@
 @import "bootstrap/dist/css/bootstrap.min.css";
 @import "bootstrap-icons/font/bootstrap-icons.min.css";
+
+body {
+    background-image: linear-gradient(rgba(255, 255, 255, 0.8), rgba(255,255,255,0.8)), url("/public/bg.jpg");
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+}

@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Planning;
 use App\Models\PlanningItem;
+use DateTime;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
@@ -12,19 +13,26 @@ class PlanningController extends Controller
     /**
      * Display a listing of the resource.
      */
-    public function index()
+    public function index(Request $request)
     {
+        $request->validate([
+            'dps' => 'required|date_format:Y-m-d',
+        ]);
+
         $service = Auth::user()->service;
-        $plannings = Planning::with('plannings_items.employe')
-            ->where('plannings.dps', today());
+        $planning = Planning::with([
+            'planning_items' => function ($query) {
+                $query->orderBy('employe_id', 'asc');
+            },
+            'planning_items.employe',
+        ])->whereDate('dps', $request->dps)
+            ->when($service !== 'SNR', function ($query) use ($service) {
+                $query->whereHas('planning_items.employe', function ($q) use ($service) {
+                    $q->where('service', $service);
+                });
+            })->orderBy('hps')->get();
 
-        if($service !== "SNR"){
-            $plannings = $plannings->where("employes.service",$service);
-        }
-
-        $plannings = $plannings->groupBy("planning.hps")->get();
-
-        return response()->json($plannings);
+        return response()->json($planning);
     }
 
     /**
@@ -33,21 +41,42 @@ class PlanningController extends Controller
     public function store(Request $request)
     {
         $request->validate([
-            "dps" => "required|date",
-            "hps" => "required|date_format:H:i",
-            "list" => "requires|array"
+            'dps' => 'required|date',
+            'hps' => 'required|date_format:H:i',
+            'list' => 'required|array',
         ]);
 
-        $planning = Planning::firstOrCreate($request->only(["dps","hps"]));
+        $dps = new DateTime($request->dps);
+        $today = new DateTime(today());
 
-        foreach($request->list as $item){
-            PlanningItem::create([
-                "employe_id" => $item->employe_id,
-                "planning_id" => $planning->id
-            ]);
+        $diff = $dps->diff($today);
+
+        if ($diff->days < 4) {
+            return response()->json([
+                'message' => "L'édition du planning doit se faire au minimum 4 jours plutôt.",
+            ], 403);
         }
 
-        return response()->json("Planning enregistré.",200);
+        $planning = Planning::firstOrCreate($request->only(['dps', 'hps']));
+
+        foreach ($request->list as $item) {
+            $trigger = Planning::join('planning_items', 'planning_items.planning_id', '=', 'plannings.id')
+                ->where([
+                    'plannings.dps' => $request->dps,
+                    'planning_items.employe_id' => $item['id'],
+                ])
+                ->select('plannings.*')
+                ->first();
+
+            if ($trigger === null) {
+                PlanningItem::firstOrCreate([
+                    'employe_id' => $item['id'],
+                    'planning_id' => $planning->id,
+                ]);
+            }
+        }
+
+        return response()->json('Planning enregistré.', 200);
     }
 
     /**
@@ -56,9 +85,9 @@ class PlanningController extends Controller
     public function show(Planning $planning)
     {
         $response = $planning->
-        with(["planning_items.employe","planning_items.expedition"])
-        ->groupBy("expeditions.id")->get();
+        with(['planning_items.employe', 'planning_items.expedition'])
+            ->groupBy('expeditions.id')->get();
 
-        return response()->json($response,200);
+        return response()->json($response, 200);
     }
 }

@@ -4,11 +4,13 @@ namespace App\Http\Controllers;
 
 use App\Models\Employe;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 
 class EmployeController extends Controller
 {
-    public function index(string $service){
-        $emps = Employe::where("service",$service)->get();
+    public function index(){
+        $user = Auth::user();
+        $emps = Employe::where("service",$user->service)->get();
 
         return response()->json($emps);
     }

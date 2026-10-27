@@ -16,7 +16,8 @@ return new class extends Migration
             $table->foreignId("employe_id")->constrained("employes")->cascadeOnDelete();
             $table->foreignId("planning_id")->constrained("plannings")->cascadeOnDelete();
             $table->foreignId("expedition_id")->nullable()->constrained("expeditions")->cascadeOnDelete();
-            $table->boolean("ok")->default(false);
+            $table->unique(["employe_id", "planning_id"]);
+            $table->boolean("ok")->default(true);
             $table->string("remarque")->nullable();
             $table->timestamps();
         });
