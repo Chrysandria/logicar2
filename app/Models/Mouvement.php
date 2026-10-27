@@ -9,6 +9,6 @@ class Mouvement extends Model
     protected $fillable = ["car_id","date","km"];
 
     public function car(){
-        return $this->belongsTo("cars");
+        return $this->belongsTo(Car::class,"car_id");
     }
 }

@@ -17,6 +17,6 @@ class PlanningItem extends Model
     }
 
     public function expedition(){
-        return $this->belongsTo("expeditions");
+        return $this->belongsTo(Expedition::class, 'expedition_id');
     }
 }

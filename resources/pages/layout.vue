@@ -84,24 +84,27 @@
                             >
                         </template>
                     </nav>
-                    <div
-                        class="p-2 d-flex flex-column gap-2 mb-5"
-                        v-if="user.service === 'SNR'"
-                    >
-                        <router-link
-                            :to="{ name: 'snr.users' }"
-                            class="btn btn-secondary"
-                        >
-                            <i class="bi bi-people"></i>
-                            Utilisateurs
-                        </router-link>
-                        <router-link
-                            :to="{ name: 'snr.cars' }"
-                            class="btn btn-secondary"
-                        >
-                            <i class="bi bi-bus-front me-2"></i>
-                            Véhicules
-                        </router-link>
+                    <div class="p-2 d-flex flex-column gap-2 mb-5">
+                        <template v-if="user.service === 'SNR'">
+                            <router-link
+                                :to="{ name: 'snr.users' }"
+                                class="btn btn-secondary"
+                            >
+                                <i class="bi bi-people"></i>
+                                Utilisateurs
+                            </router-link>
+                            <router-link
+                                :to="{ name: 'snr.cars' }"
+                                class="btn btn-secondary"
+                            >
+                                <i class="bi bi-bus-front me-2"></i>
+                                Véhicules
+                            </router-link>
+                        </template>
+                        <button v-else class="btn btn-secondary">
+                            <i class="bi bi-search me-2"></i>
+                            Faire une recherche
+                        </button>
                     </div>
                 </div>
                 <div
@@ -129,9 +132,7 @@
                     </p>
                 </div>
             </aside>
-            <main
-                class="flex-grow-1"
-            >
+            <main class="flex-grow-1">
                 <router-view></router-view>
             </main>
         </main>
@@ -147,7 +148,6 @@ import logout from "../components/logout.vue";
 import { nextWeek } from "../services/dayManager.js";
 import { useStore } from "../stores/authStore.js";
 import { storeToRefs } from "pinia";
-
 
 const store = useStore();
 const { user } = storeToRefs(store);

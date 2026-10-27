@@ -8,6 +8,23 @@ use Illuminate\Http\Request;
 
 class ExpeditionController extends Controller
 {
+
+    public function index(Request $request)
+    {
+        $request->validate([
+            'date' => 'required|date_format:Y-m-d',
+        ]);
+
+        $planning = Expedition::with([
+            'planning_items' => function ($query) {
+                $query->orderBy('employe_id', 'asc');
+            },
+            'planning_items.employe',
+        ])->whereDate('date', $request->date)
+            ->orderBy('hdr')->get();
+
+        return response()->json($planning);
+    }
     /**
      * Store a newly created resource in storage.
      */

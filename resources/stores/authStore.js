@@ -31,7 +31,7 @@ export const useStore = defineStore("auth", () => {
 
             if (connected.service === "SNR" && !route.path.startsWith("/snr")) {
                 await router.replace({
-                    name: "snr",
+                    name: "snr.index",
                 });
             }
 

@@ -10,6 +10,6 @@ class TrajetItem extends Model
     protected $fillable = ["trajet_id","point"];
 
     public function trajet(){
-        return $this->belongsTo("trajets");
+        return $this->belongsTo(Trajet::class,"trajet_id");
     }
 }

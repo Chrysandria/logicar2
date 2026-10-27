@@ -28,7 +28,7 @@ Route::middleware('auth')->group(function () {
     Route::apiResource('/anomalies', AnomalieController::class)->only(['index', 'store']);
     Route::apiResource('/cars', CarController::class);
     Route::apiResource('/moves', MouvementController::class)->only(['index', 'store', 'update']);
-    Route::apiResource('/expeditions', ExpeditionController::class)->only(['store', 'update']);
+    Route::apiResource('/expeditions', ExpeditionController::class)->only(['index', 'store', 'update']);
     Route::apiResource('/plannings', PlanningController::class)->except(['update', 'destroy']);
     Route::apiResource('/trajets', TrajetController::class);
     Route::get('/trigger', [PlanningItemController::class, 'find']);

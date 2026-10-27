@@ -1,5 +1,5 @@
 <template>
-    <div class="container p-2">
+    <div class="container w-100 p-2">
         <div
             class="d-flex flex-column flex-md-row justify-content-end mb-3 mb-md-5"
         >
