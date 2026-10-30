@@ -13,7 +13,8 @@ class AnomalieController extends Controller
      */
     public function index()
     {
-        $anomalies = Anomalie::all()->orderByDesc("created_at");
+        $anomalies = Anomalie::query()->orderByDesc('created_at')->get();
+
         return response()->json($anomalies);
     }
 
@@ -23,18 +24,18 @@ class AnomalieController extends Controller
     public function store(Request $request)
     {
         $validate = $request->validate([
-            "car_id" => "required|integer",
-            "description" => "required|string"
+            'car_id' => 'required|integer',
+            'description' => 'required|string',
         ]);
 
-        Car::find($request->validate)->update([
-            "is_available" => false
+        Car::findOrFail($validate['car_id'])->update([
+            'is_available' => false,
         ]);
 
         Anomalie::create($validate);
 
         return response()->json([
-            "Message" => "Ce véhicule a ete mis hors service"
+            'message' => 'Ce véhicule a été mis hors service',
         ]);
     }
 }

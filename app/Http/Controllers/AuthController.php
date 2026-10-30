@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Hash;
 
 class AuthController extends Controller
 {
@@ -41,9 +42,9 @@ class AuthController extends Controller
             ], 200);
         } catch (Exception $e) {
             return response()->json([
-                "error" => $e->getMessage(),
-                "message" => "Une erreur s'est produite."
-            ],501);
+                'error' => $e->getMessage(),
+                'message' => "Une erreur s'est produite.",
+            ], 501);
         }
 
     }
@@ -52,6 +53,31 @@ class AuthController extends Controller
     {
         return response()->json([
             'user' => Auth::user(),
+        ]);
+    }
+
+    public function updatePassword(Request $request)
+    {
+        $validated = $request->validate([
+            'current_password' => ['required', 'string'],
+            'password' => ['required', 'string', 'min:8', 'confirmed'],
+        ]);
+
+        $user = Auth::user();
+
+        if (! Hash::check($validated['current_password'], $user->password)) {
+            return response()->json([
+                'message' => 'Le mot de passe actuel est incorrect.',
+            ], 422);
+        }
+
+        $user->password = $validated['password'];
+        $user->must_change_password = false;
+        $user->save();
+
+        return response()->json([
+            'message' => 'Mot de passe mis à jour avec succès.',
+            'user' => $user,
         ]);
     }
 }

@@ -2,8 +2,8 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Car;
 use App\Models\Anomalie;
+use App\Models\Car;
 use Illuminate\Http\Request;
 
 class CarController extends Controller
@@ -21,11 +21,16 @@ class CarController extends Controller
      */
     public function store(Request $request)
     {
+        $request->validate([
+            'immatriculation' => 'required|string|unique:cars,immatriculation',
+            'is_available' => 'sometimes|boolean',
+        ]);
+
         Car::create($request->all());
 
         return response()->json([
-            "message" => "Nouveau véhicule enregistrer."
-        ],200);
+            'message' => 'Nouveau véhicule enregistré.',
+        ], 200);
     }
 
     /**
@@ -33,7 +38,7 @@ class CarController extends Controller
      */
     public function show(Car $car)
     {
-        $response = $car->with(["anomalies","mouvements"])->get();
+        $response = $car->load(['anomalies', 'mouvements']);
 
         return response()->json($response, 200);
     }
@@ -43,17 +48,19 @@ class CarController extends Controller
      */
     public function update(Request $request, Car $car)
     {
-        Anomalie::find($request->anomalie_id)->update([
-            "end_at" => today()
-        ]);
+        if ($request->filled('anomalie_id')) {
+            Anomalie::findOrFail($request->anomalie_id)->update([
+                'end_at' => today(),
+            ]);
+        }
 
         $car->update([
-            "is_available" => true
+            'is_available' => true,
         ]);
 
         return response()->json([
-            "message" => "Ce véhicule a été remis en service."
-        ],200);
+            'message' => 'Ce véhicule a été remis en service.',
+        ], 200);
     }
 
     /**
@@ -62,6 +69,7 @@ class CarController extends Controller
     public function destroy(Car $car)
     {
         $car->delete();
-        return response()->json("Suppression effectuée.",200);
+
+        return response()->json('Suppression effectuée.', 200);
     }
 }

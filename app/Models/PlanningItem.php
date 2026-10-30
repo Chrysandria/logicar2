@@ -6,17 +6,27 @@ use Illuminate\Database\Eloquent\Model;
 
 class PlanningItem extends Model
 {
-    protected $fillable = ["employe_id","planning_id","expedition_id","ok","remarque"];
+    protected $fillable = ['employe_id', 'planning_id', 'expedition_id', 'ok', 'remarque'];
 
-    public function employe(){
+    protected function casts(): array
+    {
+        return [
+            'ok' => 'boolean',
+        ];
+    }
+
+    public function employe()
+    {
         return $this->belongsTo(Employe::class, 'employe_id');
     }
 
-    public function planning(){
+    public function planning()
+    {
         return $this->belongsTo(Planning::class, 'planning_id');
     }
 
-    public function expedition(){
+    public function expedition()
+    {
         return $this->belongsTo(Expedition::class, 'expedition_id');
     }
 }
