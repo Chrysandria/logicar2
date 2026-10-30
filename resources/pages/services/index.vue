@@ -3,8 +3,8 @@
         <div class="page-heading d-flex flex-column flex-md-row justify-content-between align-items-md-end gap-3">
             <div>
                 <span class="badge rounded-pill bg-primary-subtle text-primary mb-2">ESPACE SERVICE</span>
-                <h1 class="h2 mb-1">Planning du jour</h1>
-                <p>Consultez les prises de service et les équipes prévues aujourd’hui.</p>
+                <h1 class="h2 mb-1">Rapport des plannings du jour</h1>
+                <p>Consultez les prises de service et le statut des employés prévus aujourd’hui.</p>
             </div>
             <div class="surface-card px-3 py-2 d-flex align-items-center gap-2">
                 <span class="stat-icon bg-primary-subtle text-primary"><i class="bi bi-calendar-check"></i></span>
@@ -28,7 +28,11 @@
         </div>
 
         <div v-if="loading" class="surface-card empty-state">
-            <span class="spinner-border spinner-border-sm text-primary me-2"></span>Chargement du planning...
+            <span class="spinner-border spinner-border-sm text-primary me-2"></span>Chargement du rapport...
+        </div>
+        <div v-else-if="errorMessage" class="alert alert-danger" role="alert">
+            <i class="bi bi-exclamation-circle me-2"></i>{{ errorMessage }}
+            <button class="btn btn-sm btn-outline-danger ms-2" type="button" @click="loadReport">Réessayer</button>
         </div>
         <div v-else-if="!plannings.length" class="surface-card empty-state">
             <i class="bi bi-calendar2-x"></i>
@@ -61,8 +65,6 @@
                 </table>
             </div>
         </article>
-
-        <div v-if="errorMessage" class="alert alert-danger">{{ errorMessage }}</div>
     </section>
 </template>
 
@@ -79,17 +81,21 @@ const todayIso = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart
 const frenchToday = dateToFr(today);
 const employeeCount = computed(() => plannings.value.reduce((sum, planning) => sum + (planning.planning_items?.length || 0), 0));
 
-onMounted(async () => {
+async function loadReport() {
+    loading.value = true;
+    errorMessage.value = "";
     try {
         const { data } = await axios.get("/plannings", { params: { dps: todayIso } });
         if (!Array.isArray(data)) {
-            throw new Error("Impossible de charger le planning du jour.");
+            throw new Error("Impossible de charger le rapport du planning du jour.");
         }
         plannings.value = data;
     } catch (error) {
-        errorMessage.value = error.response?.data?.message || error.message || "Le chargement du planning a échoué.";
+        errorMessage.value = error.response?.data?.message || error.message || "Le chargement du rapport a échoué.";
     } finally {
         loading.value = false;
     }
-});
+}
+
+onMounted(loadReport);
 </script>

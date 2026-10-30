@@ -37,9 +37,12 @@
                         </div>
                     </div>
                     <div class="d-flex flex-wrap align-items-center gap-2">
-                        <span class="badge rounded-pill" :class="unassignedItems(planning).length ? 'bg-primary-subtle text-primary' : 'text-bg-success'">
-                            {{ unassignedItems(planning).length ? `${unassignedItems(planning).length} à traiter` : 'Planning traité' }}
+                        <span class="badge rounded-pill" :class="isPlanningComplete(planning) ? 'text-bg-success' : unassignedItems(planning).length ? 'bg-primary-subtle text-primary' : 'text-bg-light'">
+                            {{ isPlanningComplete(planning) ? 'Planning traité' : unassignedItems(planning).length ? `${unassignedItems(planning).length} à traiter` : 'Aucun employé' }}
                         </span>
+                        <a v-if="isPlanningComplete(planning)" class="btn btn-sm btn-outline-success" :href="`/plannings/${planning.id}/report`" target="_blank" rel="noopener">
+                            <i class="bi bi-file-earmark-pdf me-1"></i>Récapitulatif PDF
+                        </a>
                         <button class="btn btn-sm btn-outline-primary" type="button" @click="openDispatchModal(planning)" :disabled="!unassignedItems(planning).length">
                             <i class="bi bi-plus-lg me-1"></i>Nouvelle expédition
                         </button>
@@ -71,9 +74,56 @@
                                     <i class="bi bi-person-plus me-1"></i>Ajouter des employés
                                 </button>
                                 <ul class="list-group list-group-flush">
-                                    <li v-for="item in group.items" :key="item.id" class="list-group-item px-0 py-2 d-flex justify-content-between gap-2">
-                                        <span>{{ item.employe?.nom || 'Employé' }}</span>
-                                        <span class="text-secondary">{{ item.employe?.matricule }}</span>
+                                    <li v-for="item in group.items" :key="item.id" class="list-group-item px-0 py-2">
+                                        <div class="d-flex flex-wrap justify-content-between align-items-center gap-2">
+                                            <span class="fw-semibold">{{ item.employe?.nom || 'Employé' }}</span>
+                                            <span class="text-secondary small">{{ item.employe?.matricule }}</span>
+                                            <button
+                                                v-if="correctingPlanningItemId !== item.id"
+                                                class="btn btn-sm btn-outline-secondary ms-auto"
+                                                type="button"
+                                                @click="openAssignmentCorrection(item)"
+                                            >
+                                                <i class="bi bi-arrow-left-right me-1"></i>Corriger
+                                            </button>
+                                        </div>
+                                        <form
+                                            v-if="correctingPlanningItemId === item.id"
+                                            class="row g-2 align-items-end mt-1"
+                                            @submit.prevent="saveAssignmentCorrection(planning, item)"
+                                        >
+                                            <div class="col-12 col-md">
+                                                <label class="form-label small mb-1" :for="`expedition-correction-${item.id}`">Affecter à</label>
+                                                <select
+                                                    :id="`expedition-correction-${item.id}`"
+                                                    v-model="correctionExpeditionId"
+                                                    class="form-select form-select-sm"
+                                                    :disabled="savingCorrection"
+                                                >
+                                                    <option value="">Passagers en attente</option>
+                                                    <option
+                                                        v-for="optionGroup in recapGroups(planning)"
+                                                        :key="optionGroup.expeditionId"
+                                                        :value="optionGroup.expeditionId"
+                                                        :disabled="optionGroup.items.length >= 20 && Number(optionGroup.expeditionId) !== Number(item.expedition_id)"
+                                                    >
+                                                        Expédition #{{ optionGroup.expeditionId }} · {{ routeName(expeditionInfo(optionGroup)?.trajetId) }}
+                                                    </option>
+                                                </select>
+                                            </div>
+                                            <div class="col-auto d-flex gap-2">
+                                                <button class="btn btn-sm btn-primary" type="submit" :disabled="savingCorrection">
+                                                    <span v-if="savingCorrection" class="spinner-border spinner-border-sm me-1"></span>
+                                                    Enregistrer
+                                                </button>
+                                                <button class="btn btn-sm btn-outline-secondary" type="button" :disabled="savingCorrection" @click="cancelAssignmentCorrection">
+                                                    Annuler
+                                                </button>
+                                            </div>
+                                            <div v-if="correctionError" class="col-12">
+                                                <div class="alert alert-danger py-2 mb-0" role="alert">{{ correctionError }}</div>
+                                            </div>
+                                        </form>
                                     </li>
                                 </ul>
                                 <div v-if="expeditionInfo(group)" class="small text-secondary mt-2">
@@ -231,12 +281,16 @@ const eligibleCars = ref([]);
 const loading = ref(true);
 const loadingAvailableCars = ref(false);
 const saving = ref(false);
+const savingCorrection = ref(false);
 const errorMessage = ref("");
 const modalError = ref("");
+const correctionError = ref("");
 const availabilityError = ref("");
 const recapIds = ref(new Set());
 const activePlanningId = ref(null);
 const activeExpeditionId = ref(null);
+const correctingPlanningItemId = ref(null);
+const correctionExpeditionId = ref("");
 const dispatchMode = ref("create");
 const expeditionDetails = reactive({});
 const retryExpeditionId = ref(null);
@@ -267,6 +321,10 @@ function sortedItems(planning) {
 
 function unassignedItems(planning) {
     return sortedItems(planning).filter((item) => !item.expedition_id);
+}
+
+function isPlanningComplete(planning) {
+    return Boolean(planning.planning_items?.length) && unassignedItems(planning).length === 0;
 }
 
 function recapGroups(planning) {
@@ -319,6 +377,42 @@ function expeditionInfo(group) {
         trajetId: group.expedition.trajet_id,
         hdr: group.expedition.hdr?.slice(0, 5),
     };
+}
+
+function openAssignmentCorrection(item) {
+    correctingPlanningItemId.value = item.id;
+    correctionExpeditionId.value = item.expedition_id;
+    correctionError.value = "";
+}
+
+function cancelAssignmentCorrection() {
+    correctingPlanningItemId.value = null;
+    correctionExpeditionId.value = "";
+    correctionError.value = "";
+}
+
+async function saveAssignmentCorrection(planning, item) {
+    if (savingCorrection.value) {
+        return;
+    }
+
+    savingCorrection.value = true;
+    correctionError.value = "";
+    try {
+        await axios.put(`/planning-items/${item.id}/expedition`, {
+            expedition_id: correctionExpeditionId.value ? Number(correctionExpeditionId.value) : null,
+        });
+
+        recapIds.value = new Set([...recapIds.value, planning.id]);
+        cancelAssignmentCorrection();
+        await loadPlannings();
+        useAlert("Affectation corrigée", "L’employé a été déplacé vers l’expédition sélectionnée.", "success");
+    } catch (error) {
+        correctionError.value = error.response?.data?.message || error.message || "La correction de l’affectation a échoué.";
+        useAlert("Erreur", correctionError.value, "error");
+    } finally {
+        savingCorrection.value = false;
+    }
 }
 
 async function loadPlannings() {

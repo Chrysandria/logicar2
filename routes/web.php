@@ -8,6 +8,7 @@ use App\Http\Controllers\ExpeditionController;
 use App\Http\Controllers\MouvementController;
 use App\Http\Controllers\PlanningController;
 use App\Http\Controllers\PlanningItemController;
+use App\Http\Controllers\PlanningReportController;
 use App\Http\Controllers\TrajetController;
 use App\Http\Controllers\UserController;
 use App\Http\Middleware\EnsurePasswordChanged;
@@ -37,6 +38,9 @@ Route::middleware('auth')->group(function () {
         Route::get('/expeditions/available-cars', [ExpeditionController::class, 'availableCars']);
         Route::apiResource('/expeditions', ExpeditionController::class)->only(['store', 'update']);
         Route::get('/planning-history', [PlanningController::class, 'history']);
+        Route::get('/plannings/{planning}/report', PlanningReportController::class)->name('plannings.report');
+        Route::put('/planning-items/{planningItem}/expedition', [PlanningItemController::class, 'updateExpedition'])
+            ->name('planning-items.expedition.update');
         Route::apiResource('/plannings', PlanningController::class)->except(['update', 'destroy']);
         Route::apiResource('/trajets', TrajetController::class);
         Route::get('/trigger', [PlanningItemController::class, 'find']);
