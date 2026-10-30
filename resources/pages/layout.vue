@@ -11,10 +11,10 @@
             </nav>
         </header>
         <div class="d-flex flex-grow-1">
-            <aside v-if="user" id="sidebar" class="offcanvas-lg offcanvas-start app-sidebar text-light d-flex flex-column" tabindex="-1" aria-labelledby="sidebarLabel">
+            <aside v-if="user" id="sidebar" class="offcanvas-lg offcanvas-end app-sidebar text-light d-flex flex-column bg-dark" tabindex="-1" aria-labelledby="sidebarLabel">
                 <div class="offcanvas-header border-bottom border-secondary px-4 py-4">
                     <h1 class="offcanvas-title fs-3 fw-semibold mb-0" id="sidebarLabel"><Logo /></h1>
-                    <button class="btn-close btn-close-white d-lg-none" data-bs-dismiss="offcanvas" aria-label="Fermer le menu"></button>
+                    <button class="btn-close btn-close-white d-lg-none" data-bs-dismiss="offcanvas" data-bs-target="#sidebar" aria-label="Fermer le menu"></button>
                 </div>
                 <div class="offcanvas-body p-3 d-flex flex-column">
                     <div class="user-summary rounded-3 p-3 mb-4">
