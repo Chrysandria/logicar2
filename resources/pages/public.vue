@@ -1,6 +1,6 @@
 <template>
     <div class="min-vh-100 d-flex flex-column">
-        <header class="shadow-lg px-4">
+        <header class="public-header shadow-lg px-4">
             <nav class="navbar container navbar-expand-lg navbar-light">
                 <router-link :to="{ name: 'public.index' }" class="navbar-brand fs-3 fw-semibold text-decoration-none">
                     <Logo/>
@@ -45,12 +45,14 @@
             </nav>
         </header>
         <router-view />
-        <footer class="bg-white border-top p-4 text-center text-muted small">
+        <footer class="public-footer bg-white border-top p-4 text-center text-muted small">
             © Logicar {{ new Date().getFullYear() }}
         </footer>
+        <ThemeToggle class="public-theme-toggle m-4" />
     </div>
 </template>
 
 <script setup>
 import Logo from '../components/logo.vue';
+import ThemeToggle from '../components/theme-toggle.vue';
 </script>
