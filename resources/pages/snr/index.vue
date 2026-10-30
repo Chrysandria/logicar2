@@ -30,7 +30,6 @@
             class="table-responsive mb-3 p-3 mt-5"
             v-for="(p, index) in plannings"
             :key="index"
-            :class="index % 2 === 0 ? 'bg-light' : 'bg-white'"
         >
             <div class="d-flex justify-content-end mb-3">
                 <div class="badge text-light bg-primary">

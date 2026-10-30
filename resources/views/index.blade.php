@@ -7,7 +7,7 @@
     <title>Logicar</title>
     @vite(["/resources/css/app.css","/resources/js/app.js"])
 </head>
-<body class="min-vh-100 w-100 overflow-auto">
+<body>
     <div id="app"></div>
 </body>
 </html>

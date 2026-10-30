@@ -84,10 +84,6 @@ class PlanningController extends Controller
      */
     public function show(Planning $planning)
     {
-        $response = $planning->
-        with(['planning_items.employe', 'planning_items.expedition'])
-            ->groupBy('expeditions.id')->get();
 
-        return response()->json($response, 200);
     }
 }
