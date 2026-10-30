@@ -2,7 +2,7 @@
     <section>
         <div class="page-heading d-flex flex-column flex-md-row justify-content-between align-items-md-end gap-3">
             <div>
-                <span class="badge rounded-pill text-bg-primary-subtle text-primary mb-2">EXPLOITATION</span>
+                <span class="badge rounded-pill bg-primary-subtle text-primary mb-2">EXPLOITATION</span>
                 <h1 class="h2 mb-1">{{ isToday ? "Départs du jour" : "Préparer les départs" }}</h1>
                 <p>Organisez les véhicules et les passagers par heure de prise de service.</p>
             </div>
@@ -184,6 +184,7 @@ async function dispatch(plan) {
             list: form.absentIds.map((id) => ({ planning_item_id: id })),
         });
         dispatchedPlans.value = new Set([...dispatchedPlans.value, plan.id]);
+        cars.value = cars.value.map((car) => car.id === Number(form.carId) ? { ...car, is_available: false } : car);
         useAlert("Départ enregistré", `Le départ de ${plan.hps.slice(0, 5)} a été affecté au véhicule choisi.`, "success");
     } catch (error) {
         loadError.value = error.response?.data?.message || (expeditionIds[plan.id]

@@ -1,9 +1,9 @@
 <template>
     <main class="flex-grow-1 d-flex align-items-center py-5">
         <div class="container">
-            <div class="row justify-content-center align-items-center g-5">
+            <div class="row justify-content-center align-items-center g-3 g-lg-5">
                 <div class="col-lg-5 d-none d-lg-block">
-                    <span class="badge rounded-pill text-bg-primary-subtle text-primary mb-3">ESPACE PROFESSIONNEL</span>
+                    <span class="badge rounded-pill bg-primary-subtle text-primary mb-3">ESPACE PROFESSIONNEL</span>
                     <h1 class="display-5 fw-bold">Bienvenue sur votre espace LogiCar.</h1>
                     <p class="lead text-secondary mt-3">Retrouvez vos plannings et les informations essentielles de vos opérations transport.</p>
                     <div class="d-flex gap-3 align-items-center mt-4 text-secondary">

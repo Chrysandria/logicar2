@@ -1,7 +1,7 @@
 <template>
     <section>
         <div class="page-heading d-flex flex-column flex-sm-row justify-content-between align-items-sm-end gap-3">
-            <div><span class="badge rounded-pill text-bg-primary-subtle text-primary mb-2">ADMINISTRATION</span><h1 class="h2 mb-1">Gestion de la flotte</h1><p>Véhicules disponibles, immobilisés et signalements.</p></div>
+            <div><span class="badge rounded-pill bg-primary-subtle text-primary mb-2">ADMINISTRATION</span><h1 class="h2 mb-1">Gestion de la flotte</h1><p>Véhicules disponibles, immobilisés et signalements.</p></div>
             <div class="d-flex flex-wrap gap-2">
                 <button class="btn btn-outline-primary" type="button" data-bs-toggle="modal" data-bs-target="#addMileage"><i class="bi bi-speedometer2 me-2"></i>Saisir un kilométrage</button>
                 <button class="btn btn-primary" type="button" data-bs-toggle="modal" data-bs-target="#addCar"><i class="bi bi-plus-lg me-2"></i>Ajouter un véhicule</button>
@@ -51,6 +51,27 @@
                 </table>
             </div>
         </div>
+        <div class="surface-card overflow-hidden mt-4">
+            <div class="p-3 p-md-4 border-bottom d-flex justify-content-between align-items-center gap-2">
+                <div><h2 class="h5 fw-bold mb-1">Kilométrage mensuel</h2><p class="small text-secondary mb-0">Total parcouru par véhicule ce mois-ci.</p></div>
+                <span class="badge rounded-pill bg-primary-subtle text-primary">{{ currentMonth }}</span>
+            </div>
+            <div v-if="!cars.length" class="empty-state"><i class="bi bi-graph-up"></i><strong>Aucun véhicule à afficher</strong></div>
+            <div v-else class="p-3 p-md-4">
+                <Chart
+                    :labels="monthlyChart.labels"
+                    :values="monthlyChart.values"
+                    label="Kilométrage mensuel"
+                />
+            </div>
+            <div v-if="monthlyMovements.length" class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead><tr><th>Véhicule</th><th class="text-end">Total parcouru</th></tr></thead>
+                    <tbody><tr v-for="movement in monthlyMovements" :key="movement.id"><td class="fw-semibold">{{ movement.immatriculation }}</td><td class="text-end">{{ Number(movement.total).toLocaleString("fr-FR") }} km</td></tr></tbody>
+                </table>
+            </div>
+            <div v-else-if="cars.length" class="px-3 px-md-4 pb-3 small text-secondary">Aucun relevé kilométrique enregistré ce mois-ci.</div>
+        </div>
         <div v-if="errorMessage" class="alert alert-danger mt-3">{{ errorMessage }}</div>
 
         <div class="modal fade" id="addCar" tabindex="-1" aria-labelledby="addCarTitle" aria-hidden="true">
@@ -93,10 +114,12 @@ import axios from "axios";
 import { computed, onMounted, ref } from "vue";
 import { get } from "../../services/fetch.js";
 import { useAlert } from "../../services/alert.js";
+import Chart from "../../components/chart.vue";
 
 const cars = ref([]);
 const anomalies = ref([]);
 const dailyMovements = ref([]);
+const monthlyMovements = ref([]);
 const loading = ref(true);
 const saving = ref(false);
 const savingCar = ref(null);
@@ -110,6 +133,18 @@ const errorMessage = ref("");
 const availableCars = computed(() => cars.value.filter((car) => car.is_available));
 const carsWithoutMovement = computed(() => availableCars.value.filter((car) => !dailyMovements.value.some((movement) => Number(movement.id) === car.id)));
 const filteredCars = computed(() => cars.value.filter((car) => car.immatriculation.toLowerCase().includes(search.value.toLowerCase())));
+const currentMonth = new Intl.DateTimeFormat("fr-FR", { month: "long", year: "numeric" }).format(new Date());
+const monthlyChart = computed(() => {
+    const monthlyTotals = new Map(
+        monthlyMovements.value.map((movement) => [Number(movement.id), Number(movement.total) || 0]),
+    );
+    const orderedCars = [...cars.value].sort((a, b) => a.immatriculation.localeCompare(b.immatriculation));
+
+    return {
+        labels: orderedCars.map((car) => car.immatriculation),
+        values: orderedCars.map((car) => monthlyTotals.get(Number(car.id)) || 0),
+    };
+});
 
 function activeAnomaly(carId) {
     return anomalies.value.find((anomaly) => anomaly.car_id === carId && !anomaly.end_at);
@@ -120,12 +155,13 @@ async function loadFleet() {
     errorMessage.value = "";
     try {
         const [carData, anomalyData, movementData] = await Promise.all([get("/cars"), get("/anomalies"), get("/moves")]);
-        if (!Array.isArray(carData) || !Array.isArray(anomalyData) || !Array.isArray(movementData?.daily)) {
+        if (!Array.isArray(carData) || !Array.isArray(anomalyData) || !Array.isArray(movementData?.daily) || !Array.isArray(movementData?.monthly)) {
             throw new Error("Impossible de charger la flotte et les relevés kilométriques.");
         }
         cars.value = carData;
         anomalies.value = anomalyData;
         dailyMovements.value = movementData.daily;
+        monthlyMovements.value = movementData.monthly;
     } catch (error) {
         errorMessage.value = error.message || "Le chargement de la flotte a échoué.";
     } finally {

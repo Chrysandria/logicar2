@@ -28,29 +28,37 @@
                     </div>
                     <div class="small text-uppercase text-white-50 fw-semibold px-2 mb-2">Planning</div>
                     <nav class="d-grid gap-2">
-                        <router-link :to="homeLink" class="sidebar-link" active-class="active">
+                        <router-link :to="homeLink" class="sidebar-link" exact-active-class="active" @click="closeSidebar">
                             <i class="bi bi-calendar-day"></i><span>Aujourd'hui</span>
                         </router-link>
-                        <router-link v-for="day in nextWeek" :key="day.date" :to="dayLink(day.date)" class="sidebar-link" active-class="active">
+                        <router-link v-if="!isSnr" :to="{ name: 'services.search', params: { service: user.service } }" class="sidebar-link" exact-active-class="active" @click="closeSidebar">
+                            <i class="bi bi-search"></i><span>Recherche planning</span>
+                        </router-link>
+                        <router-link v-for="day in nextWeek" :key="day.date" :to="dayLink(day.date)" class="sidebar-link" exact-active-class="active" @click="closeSidebar">
                             <i class="bi bi-calendar2-week"></i><span>{{ day.jour }}</span>
                         </router-link>
                     </nav>
                     <div v-if="isSnr" class="mt-4">
                         <div class="small text-uppercase text-white-50 fw-semibold px-2 mb-2">Administration</div>
                         <nav class="d-grid gap-2">
-                            <router-link :to="{ name: 'snr.users' }" class="sidebar-link" active-class="active"><i class="bi bi-people"></i><span>Équipe</span></router-link>
-                            <router-link :to="{ name: 'snr.cars' }" class="sidebar-link" active-class="active"><i class="bi bi-bus-front"></i><span>Véhicules</span></router-link>
+                            <router-link :to="{ name: 'snr.users' }" class="sidebar-link" exact-active-class="active" @click="closeSidebar"><i class="bi bi-people"></i><span>Équipe</span></router-link>
+                            <router-link :to="{ name: 'snr.cars' }" class="sidebar-link" exact-active-class="active" @click="closeSidebar"><i class="bi bi-bus-front"></i><span>Véhicules</span></router-link>
+                            <router-link :to="{ name: 'snr.trips' }" class="sidebar-link" exact-active-class="active" @click="closeSidebar"><i class="bi bi-signpost-split"></i><span>Trajets</span></router-link>
                         </nav>
                     </div>
                     <div class="mt-auto pt-4 d-grid gap-2">
-                        <router-link :to="accountLink" class="sidebar-link" active-class="active"><i class="bi bi-person-circle"></i><span>Mon compte</span></router-link>
+                        <router-link :to="accountLink" class="sidebar-link" exact-active-class="active" @click="closeSidebar"><i class="bi bi-person-circle"></i><span>Mon compte</span></router-link>
                         <Logout />
                         <p class="text-white-50 small text-center mt-2 mb-0">© LogiCar {{ year }}</p>
                     </div>
                 </div>
             </aside>
             <main class="app-content flex-grow-1">
-                <router-view />
+                <router-view v-slot="{ Component }">
+                    <keep-alive :max="10">
+                        <component :is="Component" />
+                    </keep-alive>
+                </router-view>
             </main>
         </div>
         <footer class="d-lg-none py-2 text-muted text-center small">© LogiCar {{ year }}</footer>
@@ -58,18 +66,41 @@
 </template>
 
 <script setup>
-import { computed } from "vue";
+import { computed, onBeforeUnmount } from "vue";
+import { Offcanvas } from "bootstrap";
 import { storeToRefs } from "pinia";
+import { useRouter } from "vue-router";
 import Logo from "../components/logo.vue";
 import Logout from "../components/logout.vue";
 import { nextWeek } from "../services/dayManager.js";
 import { useStore } from "../stores/authStore.js";
 
 const { user } = storeToRefs(useStore());
+const router = useRouter();
 const year = new Date().getFullYear();
 const isSnr = computed(() => user.value?.service === "SNR");
-const homeLink = computed(() => ({ name: isSnr.value ? "snr.index" : "services.index", params: isSnr.value ? {} : { service: user.value?.service } }));
+const homeLink = computed(() => {
+    if (!user.value) {
+        return { name: "public.index" };
+    }
+
+    return {
+        name: isSnr.value ? "snr.index" : "services.index",
+        params: isSnr.value ? {} : { service: user.value.service },
+    };
+});
 const accountLink = computed(() => ({ name: isSnr.value ? "snr.account" : "services.account", params: isSnr.value ? {} : { service: user.value?.service } }));
+const removePasswordChangeGuard = router.beforeEach((to) => {
+    if (!user.value?.must_change_password) {
+        return true;
+    }
+
+    const accountRoute = isSnr.value
+        ? { name: "snr.account" }
+        : { name: "services.account", params: { service: user.value.service } };
+
+    return to.name === accountRoute.name ? true : accountRoute;
+});
 
 function dayLink(date) {
     return {
@@ -77,4 +108,12 @@ function dayLink(date) {
         params: isSnr.value ? { date } : { service: user.value?.service, date },
     };
 }
+
+function closeSidebar() {
+    if (window.innerWidth < 992) {
+        Offcanvas.getOrCreateInstance(document.getElementById("sidebar")).hide();
+    }
+}
+
+onBeforeUnmount(removePasswordChangeGuard);
 </script>

@@ -58,9 +58,19 @@
 </template>
 <script setup>
 import { useStore } from "../stores/authStore";
+import { useAlert } from "../services/alert";
+
 const store = useStore();
 
 async function logout() {
-    await store.logout();
+    try {
+        await store.logout();
+    } catch (error) {
+        useAlert(
+            "Erreur",
+            error.response?.data?.message || "La déconnexion n’a pas pu être effectuée.",
+            "error",
+        );
+    }
 }
 </script>

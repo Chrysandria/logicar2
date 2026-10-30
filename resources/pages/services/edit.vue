@@ -2,7 +2,7 @@
     <div class="container-fluid p-0">
         <div class="page-heading d-flex flex-column flex-md-row justify-content-between align-items-md-end gap-3">
             <div>
-                <span class="badge rounded-pill text-bg-primary-subtle text-primary mb-2">ESPACE SERVICE</span>
+                <span class="badge rounded-pill bg-primary-subtle text-primary mb-2">ESPACE SERVICE</span>
                 <h1 class="h2 mb-1">Préparer un planning</h1>
                 <p>Ajoutez les employés attendus et définissez leur heure de prise de service.</p>
             </div>
@@ -17,7 +17,10 @@
             </div>
         </div>
 
-        <div class="surface-card empty-state" v-if="plannings.length === 0">
+        <div v-if="loading" class="surface-card empty-state">
+            <span class="spinner-border spinner-border-sm text-primary me-2"></span>Chargement du planning...
+        </div>
+        <div v-else-if="plannings.length === 0" class="surface-card empty-state">
             <i class="bi bi-calendar2-x"></i>
             <strong>Aucun planning enregistré pour le moment</strong>
             <div class="small mt-1">Créez un planning pour commencer à organiser votre équipe.</div>
@@ -213,11 +216,12 @@ const newPlanning = ref([
     },
 ]);
 const route = useRoute();
-const date = computed(() => route.params.date);
+const date = computed(() => String(route.params.date || ""));
 const fd = computed(() => dateToFr(new Date(`${date.value}T12:00:00`)));
 const inputs = ref([]);
 const hps = ref("");
 const saving = ref(false);
+const loading = ref(true);
 
 async function autoComplete(index) {
     const isUniq = verify();
@@ -275,7 +279,7 @@ function verify() {
 async function increment() {
     const last = newPlanning.value.length - 1;
 
-    if (newPlanning.value[last].id) {
+    if (newPlanning.value[last]?.id) {
         newPlanning.value.push({
             matricule: "",
             nom: "",
@@ -355,10 +359,19 @@ function reset() {
 }
 
 async function fetchPlanning(){
-    const data = await get("/plannings", {
-        dps: date.value,
-    });
-    plannings.value = Array.isArray(data) ? data : [];
+    if (!date.value) {
+        return;
+    }
+
+    loading.value = true;
+    try {
+        const data = await get("/plannings", {
+            dps: date.value,
+        });
+        plannings.value = Array.isArray(data) ? data : [];
+    } finally {
+        loading.value = false;
+    }
 }
 
 onMounted(async () => {
@@ -369,5 +382,9 @@ onMounted(async () => {
 
 });
 
-watch(date, fetchPlanning);
+watch(date, (newDate) => {
+    if (newDate) {
+        fetchPlanning();
+    }
+});
 </script>

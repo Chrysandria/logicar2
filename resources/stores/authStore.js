@@ -27,11 +27,24 @@ export const useStore = defineStore("auth", () => {
             user.value = {
                 name: connected.name,
                 service: connected.service,
+                must_change_password: connected.must_change_password,
             };
+
+            if (connected.must_change_password) {
+                const accountRoute = connected.service === "SNR"
+                    ? { name: "snr.account" }
+                    : { name: "services.account", params: { service: connected.service } };
+
+                if (route.name !== accountRoute.name) {
+                    await router.replace(accountRoute);
+                }
+
+                return;
+            }
 
             if (connected.service === "SNR" && !route.path.startsWith("/snr")) {
                 await router.replace({
-                    name: "snr",
+                    name: "snr.index",
                 });
             }
 
@@ -50,15 +63,9 @@ export const useStore = defineStore("auth", () => {
     }
 
     async function logout() {
-        try {
-            await axios.post("/auth/logout");
-            console.log("Déconnections effectuer");
-
-            user.value = null;
-            getConnected();
-        } catch (err) {
-            console.error(err);
-        }
+        await axios.post("/auth/logout");
+        user.value = null;
+        await router.replace({ name: "public.index" });
     }
 
     return { user, getConnected, logout };

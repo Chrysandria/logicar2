@@ -1,9 +1,9 @@
 <template>
     <main class="flex-grow-1">
         <section class="container py-5">
-            <div class="row align-items-center g-5 py-lg-5">
+            <div class="row align-items-center g-3 g-lg-5 py-lg-5">
                 <div class="col-lg-6">
-                    <span class="badge rounded-pill text-bg-primary-subtle text-primary px-3 py-2 mb-3">
+                    <span class="badge rounded-pill bg-primary-subtle text-primary px-3 py-2 mb-3">
                         <i class="bi bi-geo-alt me-1"></i> Mobilité, simplement
                     </span>
                     <h1 class="display-4 fw-bold lh-sm mb-3">Le transport de vos équipes, <span class="text-primary">mieux organisé.</span></h1>
@@ -37,7 +37,7 @@
                         </div>
                         <div class="d-flex align-items-center justify-content-between px-2 pt-3">
                             <span class="small text-secondary"><i class="bi bi-shield-check text-success me-1"></i>Un espace dédié à vos équipes</span>
-                            <Logo />
+                            <span><Logo /></span>
                         </div>
                     </div>
                 </div>

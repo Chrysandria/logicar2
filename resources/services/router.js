@@ -36,6 +36,11 @@ const routes = [
                 component: getPage("services/index"),
             },
             {
+                name: "services.search",
+                path: "search",
+                component: getPage("services/search"),
+            },
+            {
                 name: "services.edit",
                 path: ":date",
                 component: getPage("services/edit"),
@@ -71,6 +76,11 @@ const routes = [
                 name: "snr.cars",
                 path: "cars",
                 component: getPage("snr/cars"),
+            },
+            {
+                name: "snr.trips",
+                path: "trips",
+                component: getPage("snr/trips"),
             },
             {
                 name: "snr.account",
