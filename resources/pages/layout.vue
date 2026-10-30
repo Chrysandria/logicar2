@@ -11,10 +11,10 @@
             </nav>
         </header>
         <div class="d-flex flex-grow-1">
-            <aside v-if="user" id="sidebar" class="offcanvas-lg offcanvas-end app-sidebar text-light d-flex flex-column bg-dark" tabindex="-1" aria-labelledby="sidebarLabel">
+            <aside v-if="user" id="sidebar" class="offcanvas-lg offcanvas-end app-sidebar d-flex flex-column" tabindex="-1" aria-labelledby="sidebarLabel">
                 <div class="offcanvas-header border-bottom border-secondary px-4 py-4">
                     <h1 class="offcanvas-title fs-3 fw-semibold mb-0" id="sidebarLabel"><Logo /></h1>
-                    <button class="btn-close btn-close-white d-lg-none" data-bs-dismiss="offcanvas" data-bs-target="#sidebar" aria-label="Fermer le menu"></button>
+                    <button class="btn-close d-lg-none" data-bs-dismiss="offcanvas" data-bs-target="#sidebar" aria-label="Fermer le menu"></button>
                 </div>
                 <div class="offcanvas-body p-3 d-flex flex-column">
                     <div class="user-summary rounded-3 p-3 mb-4">
@@ -22,11 +22,11 @@
                             <span class="avatar-circle"><i class="bi bi-person-fill"></i></span>
                             <div class="min-w-0">
                                 <div class="fw-semibold text-truncate">{{ user.name }}</div>
-                                <span class="small text-white-50">{{ user.service }}</span>
+                                <span class="small sidebar-muted">{{ user.service }}</span>
                             </div>
                         </div>
                     </div>
-                    <div class="small text-uppercase text-white-50 fw-semibold px-2 mb-2">Planning</div>
+                    <div class="small text-uppercase sidebar-muted fw-semibold px-2 mb-2">Planning</div>
                     <nav class="d-grid gap-2">
                         <router-link :to="homeLink" class="sidebar-link" exact-active-class="active" @click="closeSidebar">
                             <i class="bi bi-calendar-day"></i><span>Aujourd'hui</span>
@@ -39,7 +39,7 @@
                         </router-link>
                     </nav>
                     <div v-if="isSnr" class="mt-4">
-                        <div class="small text-uppercase text-white-50 fw-semibold px-2 mb-2">Administration</div>
+                        <div class="small text-uppercase sidebar-muted fw-semibold px-2 mb-2">Administration</div>
                         <nav class="d-grid gap-2">
                             <router-link :to="{ name: 'snr.users' }" class="sidebar-link" exact-active-class="active" @click="closeSidebar"><i class="bi bi-people"></i><span>Équipe</span></router-link>
                             <router-link :to="{ name: 'snr.cars' }" class="sidebar-link" exact-active-class="active" @click="closeSidebar"><i class="bi bi-bus-front"></i><span>Véhicules</span></router-link>
@@ -48,8 +48,9 @@
                     </div>
                     <div class="mt-auto pt-4 d-grid gap-2">
                         <router-link :to="accountLink" class="sidebar-link" exact-active-class="active" @click="closeSidebar"><i class="bi bi-person-circle"></i><span>Mon compte</span></router-link>
+                        <ThemeToggle class="sidebar-theme-toggle justify-content-between" />
                         <Logout />
-                        <p class="text-white-50 small text-center mt-2 mb-0">© LogiCar {{ year }}</p>
+                        <p class="sidebar-muted small text-center mt-2 mb-0">© LogiCar {{ year }}</p>
                     </div>
                 </div>
             </aside>
@@ -72,6 +73,7 @@ import { storeToRefs } from "pinia";
 import { useRouter } from "vue-router";
 import Logo from "../components/logo.vue";
 import Logout from "../components/logout.vue";
+import ThemeToggle from "../components/theme-toggle.vue";
 import { nextWeek } from "../services/dayManager.js";
 import { useStore } from "../stores/authStore.js";
 

@@ -27,7 +27,7 @@
         </div>
 
         <div
-            class="surface-card table-responsive mb-3"
+            class="surface-card overflow-hidden mb-3"
             v-for="(p, index) in plannings"
             :key="index"
         >
@@ -38,36 +38,38 @@
                     {{ p.hps.substring(0, 5) }}
                 </div>
             </div>
-            <table class="table table-hover align-middle small mb-0">
-                <colgroup>
-                    <col style="width: 10%" />
-                    <col style="width: 30%" />
-                    <col style="width: 15%" />
-                    <col style="width: 15%" />
-                    <col style="width: 15%" />
-                    <col style="width: 15%" />
-                </colgroup>
-                <thead>
-                    <tr>
-                        <th>Matricule</th>
-                        <th>Nom</th>
-                        <th>Téléphone</th>
-                        <th>Lieu ramassage</th>
-                        <th>Point ADM</th>
-                        <th>Point décalé</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <tr v-for="(item, i) in p.planning_items" :key="i">
-                        <td>{{ item.employe.matricule }}</td>
-                        <td>{{ item.employe.nom }}</td>
-                        <td>{{ item.employe.telephone }}</td>
-                        <td>{{ item.employe.lieu_ramassage }}</td>
-                        <td>{{ item.employe.pnt_adm }}</td>
-                        <td>{{ item.employe.pnt_dec }}</td>
-                    </tr>
-                </tbody>
-            </table>
+            <div class="table-responsive planning-table-scroll">
+                <table class="table table-hover align-middle small mb-0">
+                    <colgroup>
+                        <col style="width: 10%" />
+                        <col style="width: 30%" />
+                        <col style="width: 15%" />
+                        <col style="width: 15%" />
+                        <col style="width: 15%" />
+                        <col style="width: 15%" />
+                    </colgroup>
+                    <thead>
+                        <tr>
+                            <th>Matricule</th>
+                            <th>Nom</th>
+                            <th>Téléphone</th>
+                            <th>Lieu ramassage</th>
+                            <th>Point ADM</th>
+                            <th>Point décalé</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr v-for="(item, i) in p.planning_items" :key="i">
+                            <td>{{ item.employe.matricule }}</td>
+                            <td>{{ item.employe.nom }}</td>
+                            <td>{{ item.employe.telephone }}</td>
+                            <td>{{ item.employe.lieu_ramassage }}</td>
+                            <td>{{ item.employe.pnt_adm }}</td>
+                            <td>{{ item.employe.pnt_dec }}</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
         </div>
     </div>
 

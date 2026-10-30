@@ -1,3 +1,3 @@
 <template>
-    <span class="text-danger">Logi</span><span class="text-primary">Car</span>
+    <span class="brand-logi">Logi</span><span class="brand-car">Car</span>
 </template>

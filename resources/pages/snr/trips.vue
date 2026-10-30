@@ -288,6 +288,9 @@ async function deleteTrip(trip) {
         confirmButtonText: "Supprimer",
         cancelButtonText: "Annuler",
         confirmButtonColor: "#dc3545",
+        customClass: {
+            popup: "logicar-swal-popup logicar-swal-alert logicar-swal-alert--warning",
+        },
     });
     if (!confirmation.isConfirmed) {
         return;

@@ -33,12 +33,12 @@
                     <h2 class="h5 fw-bold mb-1">Comptes d’accès</h2>
                     <p class="small text-secondary mb-0">Les comptes peuvent être créés ou supprimés depuis cette page.</p>
                 </div>
-                <div class="d-flex flex-column flex-sm-row gap-2">
-                    <div class="input-group search-control">
+                <div class="users-toolbar-controls d-flex flex-column flex-md-row gap-2">
+                    <div class="input-group users-search-control">
                         <span class="input-group-text bg-white"><i class="bi bi-search text-secondary"></i></span>
                         <input v-model.trim="search" class="form-control" type="search" aria-label="Rechercher un utilisateur" placeholder="Nom ou service">
                     </div>
-                    <button type="button" class="btn btn-primary" @click="openCreateModal">
+                    <button type="button" class="btn btn-primary users-add-button" @click="openCreateModal">
                         <i class="bi bi-person-plus me-2"></i>Créer
                     </button>
                 </div>
@@ -65,7 +65,7 @@
                         <tr v-for="userItem in filteredUsers" :key="userItem.id">
                             <td>
                                 <div class="d-flex align-items-center gap-2">
-                                    <span class="avatar-circle text-primary bg-primary-subtle"><i class="bi bi-person"></i></span>
+                                    <span class="avatar-circle text-light bg-primary-subtle"><i class="bi bi-person"></i></span>
                                     <strong>{{ userItem.name }}</strong>
                                 </div>
                             </td>
@@ -218,3 +218,36 @@ async function deleteUser(userItem) {
 
 onMounted(loadUsers);
 </script>
+
+<style scoped>
+.users-toolbar-controls {
+    width: 100%;
+}
+
+.users-search-control {
+    width: 100%;
+    flex: 0 1 auto;
+    min-width: 0;
+}
+
+.users-search-control .form-control {
+    min-width: 0;
+}
+
+.users-add-button {
+    flex: 0 0 auto;
+    white-space: nowrap;
+}
+
+@media (min-width: 768px) {
+    .users-toolbar-controls {
+        width: auto;
+        min-width: 22rem;
+    }
+
+    .users-search-control {
+        width: auto;
+        flex: 1 1 16rem;
+    }
+}
+</style>
