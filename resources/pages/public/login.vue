@@ -1,81 +1,47 @@
 <template>
-    <main class="flex-grow-1 d-flex justify-content-center align-items-center">
+    <main class="flex-grow-1 d-flex align-items-center py-5">
         <div class="container">
-            <div class="row">
-                <div class="col d-none d-lg-flex">Section de gauche</div>
-                <div class="col">
-                    <div class="card shadow-sm p-4">
-                        <div class="d-flex flex-column">
-                            <div class="text-center text-primary mb-3">
-                                <h1 class="display-1">
-                                    <i class="bi bi-person-circle"></i>
-                                </h1>
-                                <p class="display-3">Connexion</p>
+            <div class="row justify-content-center align-items-center g-5">
+                <div class="col-lg-5 d-none d-lg-block">
+                    <span class="badge rounded-pill text-bg-primary-subtle text-primary mb-3">ESPACE PROFESSIONNEL</span>
+                    <h1 class="display-5 fw-bold">Bienvenue sur votre espace LogiCar.</h1>
+                    <p class="lead text-secondary mt-3">Retrouvez vos plannings et les informations essentielles de vos opérations transport.</p>
+                    <div class="d-flex gap-3 align-items-center mt-4 text-secondary">
+                        <span class="stat-icon bg-primary-subtle text-primary"><i class="bi bi-lock"></i></span>
+                        <span class="small">Connexion sécurisée pour les équipes LogiCar</span>
+                    </div>
+                </div>
+                <div class="col-12 col-sm-10 col-md-8 col-lg-5">
+                    <div class="surface-card p-4 p-md-5">
+                        <div class="text-center mb-4">
+                            <span class="stat-icon bg-primary-subtle text-primary mx-auto mb-3"><i class="bi bi-person-circle"></i></span>
+                            <h2 class="h3 fw-bold">Connexion</h2>
+                            <p class="text-secondary mb-0">Identifiez-vous pour continuer.</p>
+                        </div>
+                        <form @submit.prevent="login">
+                            <div class="mb-3">
+                                <label for="name" class="form-label fw-semibold">Nom d’utilisateur</label>
+                                <input id="name" v-model.trim="name" type="text" name="name" class="form-control" autocomplete="username" required autofocus />
                             </div>
-                            <div class="form-floating mb-3">
-                                <input
-                                    type="text"
-                                    name="name"
-                                    id="name"
-                                    v-model="name"
-                                    class="form-control"
-                                    placeholder=""
-                                />
-                                <label for="name" class="form-label"
-                                    >Nom d'utilisateur</label
-                                >
-                            </div>
-                            <div class="d-flex flex-column mb-3 text-end">
-                                <a
-                                    href="#"
-                                    class="text-decoration-none small mb-2"
-                                    @click.prevent
-                                    >Mot de passe oublié ?</a
-                                >
+                            <div class="mb-3">
+                                <label for="password" class="form-label fw-semibold">Mot de passe</label>
                                 <div class="input-group">
-                                    <div class="form-floating">
-                                        <input
-                                            :type="showPassword ? 'text':'password'"
-                                            name="password"
-                                            id="password"
-                                            v-model="password"
-                                            class="form-control"
-                                            placeholder=""
-                                        />
-                                        <label for="password" class="form-label"
-                                            >Mot de passe</label
-                                        >
-                                    </div>
-                                    <button
-                                        class="btn btn-outline-secondary btn-lg"
-                                        @click="showPassword = !showPassword"
-                                    >
-                                        <i class="bi" :class="showPassword ? 'bi-eye-slash':'bi-eye'"></i>
-                                    </button>
+                                    <input id="password" v-model="password" :type="showPassword ? 'text' : 'password'" name="password" class="form-control" autocomplete="current-password" required />
+                                    <button class="btn btn-outline-secondary" type="button" :aria-label="showPassword ? 'Masquer le mot de passe' : 'Afficher le mot de passe'" @click="showPassword = !showPassword"><i class="bi" :class="showPassword ? 'bi-eye-slash' : 'bi-eye'"></i></button>
                                 </div>
                             </div>
-                            <div class="form-check mb-3">
-                                <input
-                                    type="checkbox"
-                                    name="remember"
-                                    id="remember"
-                                    v-model="remember"
-                                    class="form-check-input"
-                                />
-                                <label for="remember" class="form-label small"
-                                    >Se souvenir de moi</label
-                                >
+                            <div class="form-check mb-4">
+                                <input id="remember" v-model="remember" type="checkbox" class="form-check-input" />
+                                <label for="remember" class="form-check-label small">Se souvenir de moi</label>
                             </div>
-                            <button class="btn btn-primary" type="submit" @click="login">
-                                Se connecter
+                            <button class="btn btn-primary btn-lg w-100" type="submit" :disabled="submitting">
+                                <span v-if="submitting" class="spinner-border spinner-border-sm me-2"></span>
+                                {{ submitting ? "Connexion..." : "Se connecter" }}
                             </button>
-                        </div>
+                        </form>
                     </div>
                     <div class="text-center mt-3">
-                        <router-link to="/" class="text-muted">
-                            <i class="bi bi-arrow-left me-3"></i>
-                            Revenir à l'accueil
-                        </router-link>
+                        <router-link :to="{ name: 'public.index' }" class="link-secondary text-decoration-none small"><i class="bi bi-arrow-left me-2"></i>Revenir à l’accueil</router-link>
                     </div>
                 </div>
             </div>
@@ -93,31 +59,31 @@ const name = ref("");
 const password = ref("");
 const remember = ref(false);
 const showPassword = ref(false);
+const submitting = ref(false);
 
 async function login() {
-    name.value = name.value.trim();
-    password.value = password.value.trim();
-
-    if (name.value === "" || password.value === "") {
-        useAlert(
-            "Attention",
-            "Tout les champs sont obligatoire, veuillez revérifier",
-            "warning",
-        );
+    if (!name.value || !password.value || submitting.value) {
         return;
     }
 
-    const request = {
-        url: "/auth/login",
-        method: "post",
-        data: {
-            name: name.value,
-            password: password.value,
-            remember: remember.value,
-        },
-    };
-
-    await useFetch(request);
-    useStore().getConnected();
+    submitting.value = true;
+    try {
+        const authenticated = await useFetch({
+            url: "/auth/login",
+            method: "post",
+            data: {
+                name: name.value,
+                password: password.value,
+                remember: remember.value,
+            },
+        });
+        if (authenticated) {
+            await useStore().getConnected();
+        }
+    } catch (error) {
+        useAlert("Erreur", "La connexion n’a pas pu être effectuée.", "error");
+    } finally {
+        submitting.value = false;
+    }
 }
 </script>

@@ -1,60 +1,41 @@
 <template>
-    <div class="container p-2">
-        <div
-            class="d-flex flex-column flex-md-row justify-content-end mb-3 mb-md-5"
-        >
-            <div class="card p-2">
-                <div class="d-flex align-items-center gap-2">
-                    <span
-                        class="bg-primary-subtle text-primary p-2 rounded fs-3"
-                    >
-                        <i class="bi bi-calendar-check"></i>
-                    </span>
-                    <p class="mb-0">
-                        <span class="small">Planning du:</span><br />
-                        <span class="fs-5">{{ fd }}</span>
-                    </p>
-                </div>
+    <div class="container-fluid p-0">
+        <div class="page-heading d-flex flex-column flex-md-row justify-content-between align-items-md-end gap-3">
+            <div>
+                <span class="badge rounded-pill text-bg-primary-subtle text-primary mb-2">ESPACE SERVICE</span>
+                <h1 class="h2 mb-1">Préparer un planning</h1>
+                <p>Ajoutez les employés attendus et définissez leur heure de prise de service.</p>
             </div>
-        </div>
-        <div class="row mb-5">
-            <div class="col d-flex flex-column flex-md-row justify-content-end">
-                <button
-                    class="btn btn-primary"
-                    data-bs-toggle="modal"
-                    data-bs-target="#newPlanning"
-                >
-                    <i class="bi bi-plus-lg me-2"></i>
-                    Nouveau
+            <div class="d-flex flex-column flex-sm-row align-items-sm-center gap-2">
+                <div class="surface-card px-3 py-2 d-flex align-items-center gap-2">
+                    <span class="stat-icon bg-primary-subtle text-primary"><i class="bi bi-calendar-check"></i></span>
+                    <div><span class="small text-secondary d-block">Date du planning</span><strong>{{ fd }}</strong></div>
+                </div>
+                <button class="btn btn-primary" type="button" data-bs-toggle="modal" data-bs-target="#newPlanning">
+                    <i class="bi bi-plus-lg me-2"></i>Nouveau planning
                 </button>
             </div>
         </div>
 
-        <div class="mt-5 pt-5 text-center" v-if="plannings.length === 0" style="opacity: 0.7;">
-            <span class="display-1">
-                ❌
-            </span> <br>
-            <span class="small">
-                Aucun planning enregistré pour le moment.
-            </span>
+        <div class="surface-card empty-state" v-if="plannings.length === 0">
+            <i class="bi bi-calendar2-x"></i>
+            <strong>Aucun planning enregistré pour le moment</strong>
+            <div class="small mt-1">Créez un planning pour commencer à organiser votre équipe.</div>
         </div>
 
         <div
-            class="table-responsive mb-3 p-3"
+            class="surface-card table-responsive mb-3"
             v-for="(p, index) in plannings"
             :key="index"
-            :class="index % 2 === 0 ? 'bg-light' : 'bg-white'"
         >
-            <div class="d-flex justify-content-end mb-3">
-                <div class="badge text-light bg-primary">
+            <div class="d-flex justify-content-between align-items-center p-3 border-bottom">
+                <strong class="small text-secondary">Équipe planifiée · {{ p.planning_items.length }} employés</strong>
+                <div class="badge rounded-pill text-bg-primary">
                     <i class="bi bi-clock me-2"></i>
                     {{ p.hps.substring(0, 5) }}
                 </div>
             </div>
-            <table
-                class="table table-fixed align-middle small"
-                :class="index % 2 === 0 ? 'table-light' : 'table-white'"
-            >
+            <table class="table table-hover align-middle small mb-0">
                 <colgroup>
                     <col style="width: 10%" />
                     <col style="width: 30%" />
@@ -147,6 +128,7 @@
                                     <th>Lieu de ramassage</th>
                                     <th>Point ADM</th>
                                     <th>Point décalé</th>
+                                    <th></th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -183,20 +165,16 @@
                                     <td>
                                         {{ item.pnt_dec }}
                                     </td>
+                                    <td class="text-end">
+                                        <button v-if="item.id" class="btn btn-sm btn-outline-secondary" type="button" aria-label="Retirer cet employé" @click="clearEmployee(index)">
+                                            <i class="bi bi-x-lg"></i>
+                                        </button>
+                                    </td>
                                 </tr>
                             </tbody>
                         </table>
                     </div>
-                    <div
-                        class="d-flex flex-column flex-md-row justify-content-end"
-                    >
-                        <div
-                            class="btn bg-danger-subtle border-danger disabled text-danger badge"
-                            v-if="errorMessage"
-                        >
-                            {{ errorMessage }}
-                        </div>
-                    </div>
+                    <div v-if="errorMessage" class="alert alert-danger py-2 mb-0" role="alert">{{ errorMessage }}</div>
                 </div>
                 <div class="modal-footer">
                     <button
@@ -206,8 +184,9 @@
                     >
                         Annuler
                     </button>
-                    <button class="btn btn-primary" @click="save">
-                        Enregistré
+                    <button class="btn btn-primary" type="button" :disabled="saving" @click="save">
+                        <span v-if="saving" class="spinner-border spinner-border-sm me-1"></span>
+                        Enregistrer
                     </button>
                 </div>
             </div>
@@ -226,7 +205,7 @@ const errorMessage = ref("");
 const newPlanning = ref([
     {
         matricule: "",
-        name: "",
+        nom: "",
         telephone: "",
         lieu_ramassage: "",
         pnt_adm: "",
@@ -235,16 +214,17 @@ const newPlanning = ref([
 ]);
 const route = useRoute();
 const date = computed(() => route.params.date);
-const fd = computed(() => dateToFr(date.value));
+const fd = computed(() => dateToFr(new Date(`${date.value}T12:00:00`)));
 const inputs = ref([]);
 const hps = ref("");
+const saving = ref(false);
 
 async function autoComplete(index) {
-    let isUniq = verify();
+    const isUniq = verify();
 
     if (!isUniq) return;
 
-    const mtrl = newPlanning.value[index].matricule;
+    const mtrl = newPlanning.value[index].matricule.trim();
 
     const emp = employes.value.find((e) => e.matricule === mtrl);
 
@@ -254,9 +234,11 @@ async function autoComplete(index) {
             employe_id: emp.id,
         });
 
-        console.log(trigger);
-
-        if (trigger.found) {
+        if (!trigger) {
+            errorMessage.value = "La vérification du planning a échoué. Réessayez.";
+            return;
+        }
+        if (trigger?.found) {
             errorMessage.value = `Le matricule ${mtrl} est deja inclus dans le planning de ${trigger.planning.hps.substring(0, 5)}.`;
             return;
         }
@@ -293,10 +275,10 @@ function verify() {
 async function increment() {
     const last = newPlanning.value.length - 1;
 
-    if (newPlanning.value[last].name !== "") {
+    if (newPlanning.value[last].id) {
         newPlanning.value.push({
             matricule: "",
-            name: "",
+            nom: "",
             telephone: "",
             lieu_ramassage: "",
             pnt_adm: "",
@@ -309,6 +291,7 @@ async function increment() {
 }
 
 async function save() {
+    if (saving.value) return;
     if (hps.value === "") {
         errorMessage.value = "Veuillez saisir l'heure de prise de service.";
         return;
@@ -316,15 +299,12 @@ async function save() {
 
     errorMessage.value = "";
 
-    if (
-        newPlanning.value.length === 0 ||
-        (newPlanning.value.length === 1 && !newPlanning.value[0].id)
-    ) {
+    if (!newPlanning.value.some((employee) => employee.id)) {
         errorMessage.value = "Veuillez saisir au moins un employé.";
         return;
     }
 
-    newPlanning.value = newPlanning.value.filter((emp) => emp.id);
+    const employeesToSave = newPlanning.value.filter((employee) => employee.id);
 
     let request = {
         method: "post",
@@ -332,15 +312,30 @@ async function save() {
         data: {
             dps: date.value,
             hps: hps.value,
-            list: newPlanning.value,
+            list: employeesToSave,
         },
     };
 
-    let ok = await useFetch(request);
+    saving.value = true;
+    try {
+        const ok = await useFetch(request);
+        if (ok) {
+            await fetchPlanning();
+            reset();
+        }
+    } finally {
+        saving.value = false;
+    }
+}
 
-    if (ok) {
-        await fetchPlanning();
-        reset();
+function clearEmployee(index) {
+    newPlanning.value[index] = {
+        matricule: "",
+        nom: "",
+        telephone: "",
+        lieu_ramassage: "",
+        pnt_adm: "",
+        pnt_dec: "",
     };
 }
 
@@ -350,7 +345,7 @@ function reset() {
     newPlanning.value = [
         {
             matricule: "",
-            name: "",
+            nom: "",
             telephone: "",
             lieu_ramassage: "",
             pnt_adm: "",
@@ -360,26 +355,19 @@ function reset() {
 }
 
 async function fetchPlanning(){
-    plannings.value = await get("/plannings", {
+    const data = await get("/plannings", {
         dps: date.value,
     });
+    plannings.value = Array.isArray(data) ? data : [];
 }
 
 onMounted(async () => {
-    employes.value = await get("/emps");
+    const employeeData = await get("/emps");
+    employes.value = Array.isArray(employeeData) ? employeeData : [];
 
     await fetchPlanning();
 
-    console.log("list:", employes.value);
 });
 
-watch(date, async (newDate) => {
-    if(!newDate) return;
-
-    plannings.value = await get("/plannings", {
-        dps: newDate
-    },{
-        immediate: true
-    });
-})
+watch(date, fetchPlanning);
 </script>

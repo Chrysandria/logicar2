@@ -2,14 +2,17 @@
     <div class="min-vh-100 d-flex flex-column">
         <header class="shadow-lg px-4">
             <nav class="navbar container navbar-expand-lg navbar-light">
-                <a href="#" class="navbar-brand fs-3 fw-semibold">
+                <router-link :to="{ name: 'public.index' }" class="navbar-brand fs-3 fw-semibold text-decoration-none">
                     <Logo/>
-                </a>
+                </router-link>
                 <button
                     class="navbar-toggler"
                     type="button"
                     data-bs-toggle="collapse"
                     data-bs-target="#navbarNav"
+                    aria-controls="navbarNav"
+                    aria-expanded="false"
+                    aria-label="Ouvrir la navigation"
                 >
                     <span class="navbar-toggler-icon"></span>
                 </button>
@@ -42,7 +45,7 @@
             </nav>
         </header>
         <router-view />
-        <footer class="shadow-lg p-4 text-center text-muted small">
+        <footer class="bg-white border-top p-4 text-center text-muted small">
             © Logicar {{ new Date().getFullYear() }}
         </footer>
     </div>

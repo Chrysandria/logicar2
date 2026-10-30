@@ -6,17 +6,20 @@ use Illuminate\Database\Eloquent\Model;
 
 class Car extends Model
 {
-    protected $fillable = ["immatriculation","is_available"];
+    protected $fillable = ['immatriculation', 'is_available'];
 
-    public function anomalies(){
-        return $this->hasMany("anomalies");
+    public function anomalies()
+    {
+        return $this->hasMany(Anomalie::class);
     }
 
-    public function mouvements(){
-        return $this->hasMany("mouvements");
+    public function mouvements()
+    {
+        return $this->hasMany(Mouvement::class);
     }
 
-    public function expeditions(){
-        return $this->hasMany("expeditions");
+    public function expeditions()
+    {
+        return $this->hasMany(Expedition::class);
     }
 }

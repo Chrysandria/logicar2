@@ -21,7 +21,6 @@ class TrajetController extends Controller
      */
     public function store(Request $request)
     {
-
         $request->validate([
             'designation' => 'required|string',
             'trajet_items' => 'required|array',
@@ -34,12 +33,11 @@ class TrajetController extends Controller
         foreach ($request->trajet_items as $item) {
             TrajetItem::create([
                 'trajet_id' => $trajet->id,
-                'point' => $item->point,
+                'point' => $item['point'] ?? $item->point,
             ]);
         }
 
         return response()->json('Nouveau trajet enregistré', 200);
-
     }
 
     /**
@@ -47,7 +45,7 @@ class TrajetController extends Controller
      */
     public function show(Trajet $trajet)
     {
-        return response()->json($trajet->with('trajet_items')->get());
+        return response()->json($trajet->load('trajet_items'));
     }
 
     /**
@@ -64,11 +62,11 @@ class TrajetController extends Controller
         foreach ($request->trajet_items as $item) {
             TrajetItem::create([
                 'trajet_id' => $trajet->id,
-                'point' => $item->point,
+                'point' => $item['point'] ?? $item->point,
             ]);
         }
 
-        return response()->json("Mis à jour effectué",200);
+        return response()->json('Mis à jour effectué', 200);
     }
 
     /**

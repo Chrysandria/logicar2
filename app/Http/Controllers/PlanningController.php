@@ -60,17 +60,22 @@ class PlanningController extends Controller
         $planning = Planning::firstOrCreate($request->only(['dps', 'hps']));
 
         foreach ($request->list as $item) {
+            $employeId = is_array($item) ? ($item['id'] ?? null) : ($item->id ?? null);
+            if ($employeId === null) {
+                continue;
+            }
+
             $trigger = Planning::join('planning_items', 'planning_items.planning_id', '=', 'plannings.id')
                 ->where([
                     'plannings.dps' => $request->dps,
-                    'planning_items.employe_id' => $item['id'],
+                    'planning_items.employe_id' => $employeId,
                 ])
                 ->select('plannings.*')
                 ->first();
 
             if ($trigger === null) {
                 PlanningItem::firstOrCreate([
-                    'employe_id' => $item['id'],
+                    'employe_id' => $employeId,
                     'planning_id' => $planning->id,
                 ]);
             }
@@ -84,9 +89,7 @@ class PlanningController extends Controller
      */
     public function show(Planning $planning)
     {
-        $response = $planning->
-        with(['planning_items.employe', 'planning_items.expedition'])
-            ->groupBy('expeditions.id')->get();
+        $response = $planning->load(['planning_items.employe', 'planning_items.expedition']);
 
         return response()->json($response, 200);
     }
