@@ -12,6 +12,7 @@ function getInitialTheme() {
 }
 
 export const useThemeStore = defineStore("theme", () => {
+    const systemTheme = window.matchMedia("(prefers-color-scheme: dark)");
     const theme = ref(getInitialTheme());
 
     function applyTheme() {
@@ -24,6 +25,17 @@ export const useThemeStore = defineStore("theme", () => {
         localStorage.setItem("logicar-theme", nextTheme);
         applyTheme();
     }
+
+    systemTheme.addEventListener("change", (event) => {
+        const savedTheme = localStorage.getItem("logicar-theme");
+
+        if (savedTheme === "light" || savedTheme === "dark") {
+            return;
+        }
+
+        theme.value = event.matches ? "dark" : "light";
+        applyTheme();
+    });
 
     function toggleTheme() {
         setTheme(theme.value === "dark" ? "light" : "dark");
