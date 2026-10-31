@@ -158,14 +158,12 @@ class ExpeditionController extends Controller
                     abort(422, 'Cette expédition contient déjà des employés d’un autre planning ou service.');
                 }
 
-                $currentPassengerCount = $expedition->planning_items()->count();
-                if ($currentPassengerCount + count($validated['add_list']) > 20) {
-                    abort(422, 'Cette expédition ne peut pas contenir plus de 20 employés.');
-                }
-
                 $planningItemsToAdd = PlanningItem::query()
                     ->where('planning_id', $planning->id)
-                    ->whereNull('expedition_id')
+                    ->where(function ($query) use ($expedition): void {
+                        $query->whereNull('expedition_id')
+                            ->orWhere('expedition_id', '!=', $expedition->id);
+                    })
                     ->whereIn('id', array_column($validated['add_list'], 'planning_item_id'))
                     ->when($service !== 'SNR', function ($query) use ($service): void {
                         $query->whereHas('employe', fn ($query) => $query->where('service', $service));
@@ -174,6 +172,11 @@ class ExpeditionController extends Controller
                     ->get();
                 if ($planningItemsToAdd->count() !== count($validated['add_list'])) {
                     abort(422, 'Certains employés ne sont plus disponibles pour cette expédition.');
+                }
+
+                $currentPassengerCount = $expedition->planning_items()->count();
+                if ($currentPassengerCount + $planningItemsToAdd->count() > 20) {
+                    abort(422, 'Cette expédition ne peut pas contenir plus de 20 employés.');
                 }
 
                 PlanningItem::query()
@@ -194,6 +197,30 @@ class ExpeditionController extends Controller
         });
 
         return response()->json('mis à jour effectue', 200);
+    }
+
+    public function removePlanningItem(Expedition $expedition, PlanningItem $planningItem): JsonResponse
+    {
+        DB::transaction(function () use ($expedition, $planningItem): void {
+            Expedition::query()
+                ->whereKey($expedition->id)
+                ->lockForUpdate()
+                ->firstOrFail();
+
+            $planningItem = PlanningItem::query()
+                ->whereKey($planningItem->id)
+                ->where('expedition_id', $expedition->id)
+                ->lockForUpdate()
+                ->firstOrFail();
+
+            $planningItem->update([
+                'expedition_id' => null,
+            ]);
+        });
+
+        return response()->json([
+            'message' => 'Employé retiré de l’expédition.',
+        ]);
     }
 
     private function hasScheduleConflict(

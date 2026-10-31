@@ -66,7 +66,7 @@
                                 </div>
                                 <div class="small text-secondary mb-2">{{ group.items.length }} passager{{ group.items.length > 1 ? 's' : '' }}</div>
                                 <button
-                                    v-if="unassignedItems(planning).length && group.items.length < 20"
+                                    v-if="availablePlanningItems(planning, group.expeditionId).length && group.items.length < 20"
                                     class="btn btn-sm btn-outline-primary mb-2"
                                     type="button"
                                     @click="openAddPassengers(planning, group)"
@@ -82,9 +82,20 @@
                                                 v-if="correctingPlanningItemId !== item.id"
                                                 class="btn btn-sm btn-outline-secondary ms-auto"
                                                 type="button"
+                                                :disabled="removingPlanningItemId !== null"
                                                 @click="openAssignmentCorrection(item)"
                                             >
                                                 <i class="bi bi-arrow-left-right me-1"></i>Corriger
+                                            </button>
+                                            <button
+                                                class="btn btn-sm btn-outline-danger"
+                                                type="button"
+                                                :aria-label="`Retirer ${item.employe?.nom || 'cet employé'} de l’expédition`"
+                                                :disabled="removingPlanningItemId !== null || savingCorrection"
+                                                @click="removePlanningItem(planning, item)"
+                                            >
+                                                <span v-if="removingPlanningItemId === item.id" class="spinner-border spinner-border-sm me-1"></span>
+                                                <i v-else class="bi bi-person-dash me-1"></i>Retirer
                                             </button>
                                         </div>
                                         <form
@@ -221,12 +232,12 @@
                             <div>
                                 <h3 class="h6 fw-bold mb-1">{{ dispatchMode === 'add' ? 'Ajouter des employés' : 'Employés concernés' }}</h3>
                                 <p class="small text-secondary mb-0">
-                                    {{ dispatchMode === 'add' ? `Sélectionnez les passagers à ajouter (${maxSelectableItems} place${maxSelectableItems > 1 ? 's' : ''} restante${maxSelectableItems > 1 ? 's' : ''}).` : 'Sélectionnez les passagers de cette expédition (maximum 20).' }}
+                                    {{ dispatchMode === 'add' ? `Sélectionnez des passagers en attente ou affectés à une autre expédition (${maxSelectableItems} place${maxSelectableItems > 1 ? 's' : ''} restante${maxSelectableItems > 1 ? 's' : ''}).` : 'Sélectionnez les passagers de cette expédition (maximum 20).' }}
                                 </p>
                             </div>
                             <span class="badge rounded-pill bg-primary-subtle text-primary">{{ dispatchForm.itemIds.length }} sélectionné{{ dispatchForm.itemIds.length > 1 ? 's' : '' }}</span>
                         </div>
-                        <div v-if="activePlanning && unassignedItems(activePlanning).length" class="table-responsive border rounded-3">
+                        <div v-if="selectableItems.length" class="table-responsive border rounded-3">
                             <table class="table table-hover align-middle mb-0">
                                 <thead>
                                     <tr>
@@ -235,17 +246,24 @@
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    <tr v-for="item in unassignedItems(activePlanning)" :key="item.id">
+                                    <tr v-for="item in selectableItems" :key="item.id">
                                         <td class="text-center"><input v-model="dispatchForm.itemIds" class="form-check-input" type="checkbox" :value="item.id" :disabled="!dispatchForm.itemIds.includes(item.id) && !canSelectMore" :aria-label="`Sélectionner ${item.employe?.nom || 'cet employé'}`"></td>
                                         <td><span class="badge text-bg-light">{{ item.employe?.matricule || '—' }}</span></td>
-                                        <td class="fw-semibold">{{ item.employe?.nom || 'Employé' }}</td>
+                                        <td class="fw-semibold">
+                                            {{ item.employe?.nom || 'Employé' }}
+                                            <span v-if="item.expedition_id" class="badge bg-warning-subtle text-warning-emphasis ms-1">
+                                                Expédition #{{ item.expedition_id }}
+                                            </span>
+                                        </td>
                                         <td class="d-none d-md-table-cell">{{ item.employe?.lieu_ramassage || '—' }}</td>
                                         <td class="d-none d-lg-table-cell">{{ item.employe?.telephone || '—' }}</td>
                                     </tr>
                                 </tbody>
                             </table>
                         </div>
-                        <div v-else class="alert alert-light border mb-0">Aucun employé n’est disponible pour une nouvelle expédition.</div>
+                        <div v-else class="alert alert-light border mb-0">
+                            {{ dispatchMode === 'add' ? 'Aucun autre planning_item ne peut être ajouté à cette expédition.' : 'Aucun employé n’est disponible pour une nouvelle expédition.' }}
+                        </div>
                         <div v-if="dispatchMode === 'add' && activeExpeditionGroup" class="small text-secondary mt-3">
                             Ajout à l’expédition #{{ activeExpeditionGroup.expeditionId }}
                             <span v-if="expeditionInfo(activeExpeditionGroup)?.carId"> · {{ carName(expeditionInfo(activeExpeditionGroup).carId) }}</span>
@@ -282,6 +300,7 @@ const loading = ref(true);
 const loadingAvailableCars = ref(false);
 const saving = ref(false);
 const savingCorrection = ref(false);
+const removingPlanningItemId = ref(null);
 const errorMessage = ref("");
 const modalError = ref("");
 const correctionError = ref("");
@@ -303,7 +322,15 @@ const activePlanning = computed(() => plans.value.find((planning) => planning.id
 const activeExpeditionGroup = computed(() => activePlanning.value
     ? recapGroups(activePlanning.value).find((group) => Number(group.expeditionId) === Number(activeExpeditionId.value))
     : null);
-const selectableItems = computed(() => activePlanning.value ? unassignedItems(activePlanning.value) : []);
+const selectableItems = computed(() => {
+    if (!activePlanning.value) {
+        return [];
+    }
+
+    return dispatchMode.value === "add" && activeExpeditionId.value
+        ? availablePlanningItems(activePlanning.value, activeExpeditionId.value)
+        : unassignedItems(activePlanning.value);
+});
 const maxSelectableItems = computed(() => dispatchMode.value === "add"
     ? Math.max(0, 20 - (activeExpeditionGroup.value?.items.length || 0))
     : 20);
@@ -321,6 +348,10 @@ function sortedItems(planning) {
 
 function unassignedItems(planning) {
     return sortedItems(planning).filter((item) => !item.expedition_id);
+}
+
+function availablePlanningItems(planning, expeditionId) {
+    return sortedItems(planning).filter((item) => Number(item.expedition_id) !== Number(expeditionId));
 }
 
 function isPlanningComplete(planning) {
@@ -412,6 +443,28 @@ async function saveAssignmentCorrection(planning, item) {
         useAlert("Erreur", correctionError.value, "error");
     } finally {
         savingCorrection.value = false;
+    }
+}
+
+async function removePlanningItem(planning, item) {
+    if (removingPlanningItemId.value !== null || savingCorrection.value) {
+        return;
+    }
+
+    removingPlanningItemId.value = item.id;
+    try {
+        await axios.delete(`/expeditions/${item.expedition_id}/planning-items/${item.id}`);
+        if (correctingPlanningItemId.value === item.id) {
+            cancelAssignmentCorrection();
+        }
+        recapIds.value = new Set([...recapIds.value, planning.id]);
+        await loadPlannings();
+        useAlert("Employé retiré", "L’employé a été replacé parmi les passagers en attente.", "success");
+    } catch (error) {
+        const message = error.response?.data?.message || error.message || "Le retrait de l’employé a échoué.";
+        useAlert("Erreur", message, "error");
+    } finally {
+        removingPlanningItemId.value = null;
     }
 }
 
@@ -526,7 +579,10 @@ async function saveExpedition() {
 
     const planning = activePlanning.value;
     const selectedIds = new Set(dispatchForm.itemIds);
-    const selectedItems = unassignedItems(planning).filter((item) => selectedIds.has(item.id));
+    const selectablePlanningItems = dispatchMode.value === "add"
+        ? availablePlanningItems(planning, activeExpeditionId.value)
+        : unassignedItems(planning);
+    const selectedItems = selectablePlanningItems.filter((item) => selectedIds.has(item.id));
     if (selectedItems.length !== selectedIds.size) {
         modalError.value = "La sélection a changé. Fermez la fenêtre et rechargez le planning.";
         return;

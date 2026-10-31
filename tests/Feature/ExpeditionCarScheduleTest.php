@@ -106,6 +106,134 @@ class ExpeditionCarScheduleTest extends TestCase
         ]);
     }
 
+    public function test_employee_from_another_expedition_in_the_same_planning_can_be_added_to_an_expedition(): void
+    {
+        $this->actingAs(User::create([
+            'name' => 'dispatcher',
+            'service' => 'SNR',
+            'password' => 'secret123',
+        ]));
+        $trip = Trajet::create(['designation' => 'Centre - Depot']);
+        $targetExpedition = Expedition::create([
+            'date' => '2026-10-30',
+            'hdr' => '09:00',
+            'trajet_id' => $trip->id,
+        ]);
+        $sourceExpedition = Expedition::create([
+            'date' => '2026-10-30',
+            'hdr' => '10:00',
+            'trajet_id' => $trip->id,
+        ]);
+        $planning = Planning::create(['dps' => '2026-10-30', 'hps' => '11:00']);
+        $this->createPlanningItem($planning, 'EMP-007', $targetExpedition->id);
+        $itemToMove = $this->createPlanningItem($planning, 'EMP-008', $sourceExpedition->id);
+
+        $this->putJson("/expeditions/{$targetExpedition->id}", [
+            'planning_id' => $planning->id,
+            'add_list' => [['planning_item_id' => $itemToMove->id]],
+        ])->assertOk();
+
+        $this->assertDatabaseHas('planning_items', [
+            'id' => $itemToMove->id,
+            'expedition_id' => $targetExpedition->id,
+            'ok' => false,
+        ]);
+    }
+
+    public function test_employee_cannot_be_moved_to_a_full_expedition(): void
+    {
+        $this->actingAs(User::create([
+            'name' => 'dispatcher',
+            'service' => 'SNR',
+            'password' => 'secret123',
+        ]));
+        $trip = Trajet::create(['designation' => 'Centre - Depot']);
+        $targetExpedition = Expedition::create([
+            'date' => '2026-10-30',
+            'hdr' => '09:00',
+            'trajet_id' => $trip->id,
+        ]);
+        $sourceExpedition = Expedition::create([
+            'date' => '2026-10-30',
+            'hdr' => '10:00',
+            'trajet_id' => $trip->id,
+        ]);
+        $planning = Planning::create(['dps' => '2026-10-30', 'hps' => '11:00']);
+        for ($index = 1; $index <= 20; $index++) {
+            $this->createPlanningItem($planning, sprintf('FULL-%03d', $index), $targetExpedition->id);
+        }
+        $itemToMove = $this->createPlanningItem($planning, 'EMP-009', $sourceExpedition->id);
+
+        $this->putJson("/expeditions/{$targetExpedition->id}", [
+            'planning_id' => $planning->id,
+            'add_list' => [['planning_item_id' => $itemToMove->id]],
+        ])
+            ->assertUnprocessable()
+            ->assertJsonPath('message', 'Cette expédition ne peut pas contenir plus de 20 employés.');
+
+        $this->assertDatabaseHas('planning_items', [
+            'id' => $itemToMove->id,
+            'expedition_id' => $sourceExpedition->id,
+        ]);
+    }
+
+    public function test_employee_can_be_removed_from_an_expedition_and_returned_to_pending_passengers(): void
+    {
+        $this->actingAs(User::create([
+            'name' => 'dispatcher',
+            'service' => 'SNR',
+            'password' => 'secret123',
+        ]));
+        $trip = Trajet::create(['designation' => 'Centre - Depot']);
+        $expedition = Expedition::create([
+            'date' => '2026-10-30',
+            'hdr' => '09:00',
+            'trajet_id' => $trip->id,
+        ]);
+        $planning = Planning::create(['dps' => '2026-10-30', 'hps' => '11:00']);
+        $planningItem = $this->createPlanningItem($planning, 'EMP-005', $expedition->id);
+
+        $this->deleteJson("/expeditions/{$expedition->id}/planning-items/{$planningItem->id}")
+            ->assertOk()
+            ->assertJsonPath('message', 'Employé retiré de l’expédition.');
+
+        $this->assertDatabaseHas('planning_items', [
+            'id' => $planningItem->id,
+            'planning_id' => $planning->id,
+            'expedition_id' => null,
+        ]);
+    }
+
+    public function test_employee_cannot_be_removed_from_a_different_expedition(): void
+    {
+        $this->actingAs(User::create([
+            'name' => 'dispatcher',
+            'service' => 'SNR',
+            'password' => 'secret123',
+        ]));
+        $trip = Trajet::create(['designation' => 'Centre - Depot']);
+        $requestedExpedition = Expedition::create([
+            'date' => '2026-10-30',
+            'hdr' => '09:00',
+            'trajet_id' => $trip->id,
+        ]);
+        $assignedExpedition = Expedition::create([
+            'date' => '2026-10-30',
+            'hdr' => '10:00',
+            'trajet_id' => $trip->id,
+        ]);
+        $planning = Planning::create(['dps' => '2026-10-30', 'hps' => '11:00']);
+        $planningItem = $this->createPlanningItem($planning, 'EMP-006', $assignedExpedition->id);
+
+        $this->deleteJson("/expeditions/{$requestedExpedition->id}/planning-items/{$planningItem->id}")
+            ->assertNotFound();
+
+        $this->assertDatabaseHas('planning_items', [
+            'id' => $planningItem->id,
+            'expedition_id' => $assignedExpedition->id,
+        ]);
+    }
+
     public function test_employees_from_another_planning_cannot_be_added_to_an_expedition(): void
     {
         $this->actingAs(User::create([

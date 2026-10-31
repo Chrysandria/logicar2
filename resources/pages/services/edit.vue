@@ -31,11 +31,16 @@
             v-for="(p, index) in plannings"
             :key="index"
         >
-            <div class="d-flex justify-content-between align-items-center p-3 border-bottom">
+            <div class="d-flex flex-column flex-sm-row justify-content-between align-items-sm-center gap-2 p-3 border-bottom">
                 <strong class="small text-secondary">Équipe planifiée · {{ p.planning_items.length }} employés</strong>
-                <div class="badge rounded-pill text-bg-primary">
-                    <i class="bi bi-clock me-2"></i>
-                    {{ p.hps.substring(0, 5) }}
+                <div class="d-flex flex-wrap align-items-center gap-2">
+                    <button class="btn btn-sm btn-outline-primary" type="button" @click="openAddEmployees(p)">
+                        <i class="bi bi-person-plus me-1"></i>Ajouter des employés
+                    </button>
+                    <div class="badge rounded-pill text-bg-primary">
+                        <i class="bi bi-clock me-2"></i>
+                        {{ p.hps.substring(0, 5) }}
+                    </div>
                 </div>
             </div>
             <div class="table-responsive planning-table-scroll">
@@ -84,8 +89,8 @@
             <div class="modal-content">
                 <div class="modal-header">
                     <h5 class="modal-title" id="title">
-                        <i class="bi bi-plus-lg text-primary fw-bold me-2"></i>
-                        Nouveau planning
+                        <i class="bi text-primary fw-bold me-2" :class="planningMode === 'add' ? 'bi-person-plus' : 'bi-plus-lg'"></i>
+                        {{ planningMode === 'add' ? 'Ajouter des employés au planning' : 'Nouveau planning' }}
                     </h5>
                     <button
                         type="button"
@@ -102,9 +107,7 @@
                             <u class="fw-semibold">Date:</u>
                             {{ fd }}
                         </div>
-                        <div
-                            class="col-md-6 d-flex justify-content-end flex-column flex-md-row"
-                        >
+                        <div v-if="planningMode === 'create'" class="col-md-6 d-flex justify-content-end flex-column flex-md-row">
                             <div class="input-group">
                                 <span class="input-group-text fw-semibold small"
                                     >Heure de prise de service</span
@@ -117,6 +120,11 @@
                                     class="form-control"
                                 />
                             </div>
+                        </div>
+                        <div v-else class="col-md-6 d-flex justify-content-end align-items-center">
+                            <span class="badge rounded-pill text-bg-primary">
+                                <i class="bi bi-clock me-2"></i>Prise de service {{ hps }}
+                            </span>
                         </div>
                     </div>
                     <p class="badge mb-0 bg-primary text-white text-wrap my-3">
@@ -191,7 +199,7 @@
                     </button>
                     <button class="btn btn-primary" type="button" :disabled="saving" @click="save">
                         <span v-if="saving" class="spinner-border spinner-border-sm me-1"></span>
-                        Enregistrer
+                        {{ planningMode === 'add' ? 'Ajouter au planning' : 'Enregistrer' }}
                     </button>
                 </div>
             </div>
@@ -199,6 +207,7 @@
     </div>
 </template>
 <script setup>
+import { Modal } from "bootstrap";
 import { onMounted, ref, nextTick, computed, watch } from "vue";
 import { dateToFr } from "../../services/dayManager";
 import { useFetch, get } from "../../services/fetch";
@@ -224,6 +233,8 @@ const inputs = ref([]);
 const hps = ref("");
 const saving = ref(false);
 const loading = ref(true);
+const planningMode = ref("create");
+const targetPlanningId = ref(null);
 
 async function autoComplete(index) {
     const isUniq = verify();
@@ -298,7 +309,7 @@ async function increment() {
 
 async function save() {
     if (saving.value) return;
-    if (hps.value === "") {
+    if (planningMode.value === "create" && hps.value === "") {
         errorMessage.value = "Veuillez saisir l'heure de prise de service.";
         return;
     }
@@ -312,21 +323,30 @@ async function save() {
 
     const employeesToSave = newPlanning.value.filter((employee) => employee.id);
 
-    let request = {
-        method: "post",
-        url: "/plannings",
-        data: {
-            dps: date.value,
-            hps: hps.value,
-            list: employeesToSave,
-        },
-    };
+    const request = planningMode.value === "add"
+        ? {
+            method: "post",
+            url: `/plannings/${targetPlanningId.value}/employees`,
+            data: {
+                employee_ids: employeesToSave.map((employee) => employee.id),
+            },
+        }
+        : {
+            method: "post",
+            url: "/plannings",
+            data: {
+                dps: date.value,
+                hps: hps.value,
+                list: employeesToSave,
+            },
+        };
 
     saving.value = true;
     try {
         const ok = await useFetch(request);
         if (ok) {
             await fetchPlanning();
+            Modal.getOrCreateInstance(document.getElementById("newPlanning")).hide();
             reset();
         }
     } finally {
@@ -348,6 +368,8 @@ function clearEmployee(index) {
 function reset() {
     errorMessage.value = "";
     hps.value = "";
+    planningMode.value = "create";
+    targetPlanningId.value = null;
     newPlanning.value = [
         {
             matricule: "",
@@ -358,6 +380,14 @@ function reset() {
             pnt_dec: "",
         },
     ];
+}
+
+function openAddEmployees(planning) {
+    reset();
+    planningMode.value = "add";
+    targetPlanningId.value = planning.id;
+    hps.value = planning.hps.substring(0, 5);
+    Modal.getOrCreateInstance(document.getElementById("newPlanning")).show();
 }
 
 async function fetchPlanning(){

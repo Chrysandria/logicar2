@@ -34,6 +34,8 @@ Route::middleware('auth')->group(function () {
 
         Route::get('/planning-history', [PlanningController::class, 'history']);
         Route::apiResource('/plannings', PlanningController::class)->except(['update', 'destroy']);
+        Route::post('/plannings/{planning}/employees', [PlanningController::class, 'addEmployees'])
+            ->name('plannings.employees.store');
         Route::get('/trigger', [PlanningItemController::class, 'find']);
 
         Route::middleware(EnsureSnr::class)->group(function () {
@@ -43,6 +45,8 @@ Route::middleware('auth')->group(function () {
             Route::apiResource('/moves', MouvementController::class)->only(['index', 'store', 'update']);
             Route::get('/expeditions/available-cars', [ExpeditionController::class, 'availableCars']);
             Route::apiResource('/expeditions', ExpeditionController::class)->only(['store', 'update']);
+            Route::delete('/expeditions/{expedition}/planning-items/{planningItem}', [ExpeditionController::class, 'removePlanningItem'])
+                ->name('expeditions.planning-items.destroy');
             Route::get('/plannings/{planning}/report', PlanningReportController::class)->name('plannings.report');
             Route::put('/planning-items/{planningItem}/expedition', [PlanningItemController::class, 'updateExpedition'])
                 ->name('planning-items.expedition.update');

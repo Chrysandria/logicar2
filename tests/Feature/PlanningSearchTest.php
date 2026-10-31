@@ -122,4 +122,114 @@ class PlanningSearchTest extends TestCase
             ->assertUnprocessable()
             ->assertJsonValidationErrors(['employee_id']);
     }
+
+    public function test_service_can_add_employees_to_an_existing_planning(): void
+    {
+        $this->actingAs(User::create([
+            'name' => 'service-user',
+            'service' => 'CUISINE',
+            'password' => 'secret123',
+        ]));
+        $planning = Planning::create([
+            'dps' => today()->addDays(10)->toDateString(),
+            'hps' => '06:00',
+        ]);
+        $employee = $this->createEmployee('CU-003', 'CUISINE');
+
+        $this->postJson("/plannings/{$planning->id}/employees", [
+            'employee_ids' => [$employee->id],
+        ])
+            ->assertOk()
+            ->assertJsonPath('message', 'Employés ajoutés au planning.');
+
+        $this->assertDatabaseHas('planning_items', [
+            'planning_id' => $planning->id,
+            'employe_id' => $employee->id,
+            'expedition_id' => null,
+        ]);
+    }
+
+    public function test_service_cannot_add_an_employee_from_another_service_to_a_planning(): void
+    {
+        $this->actingAs(User::create([
+            'name' => 'service-user',
+            'service' => 'CUISINE',
+            'password' => 'secret123',
+        ]));
+        $planning = Planning::create([
+            'dps' => today()->addDays(10)->toDateString(),
+            'hps' => '06:00',
+        ]);
+        $employee = $this->createEmployee('TR-003', 'TRANSPORT');
+
+        $this->postJson("/plannings/{$planning->id}/employees", [
+            'employee_ids' => [$employee->id],
+        ])
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors(['employee_ids.0']);
+
+        $this->assertDatabaseMissing('planning_items', [
+            'planning_id' => $planning->id,
+            'employe_id' => $employee->id,
+        ]);
+    }
+
+    public function test_service_cannot_add_an_employee_already_planned_for_that_date(): void
+    {
+        $this->actingAs(User::create([
+            'name' => 'service-user',
+            'service' => 'CUISINE',
+            'password' => 'secret123',
+        ]));
+        $date = today()->addDays(10)->toDateString();
+        $targetPlanning = Planning::create(['dps' => $date, 'hps' => '06:00']);
+        $existingPlanning = Planning::create(['dps' => $date, 'hps' => '07:00']);
+        $employee = $this->createEmployee('CU-004', 'CUISINE');
+        PlanningItem::create([
+            'employe_id' => $employee->id,
+            'planning_id' => $existingPlanning->id,
+        ]);
+
+        $this->postJson("/plannings/{$targetPlanning->id}/employees", [
+            'employee_ids' => [$employee->id],
+        ])
+            ->assertUnprocessable()
+            ->assertJsonPath('message', 'Un ou plusieurs employés sont déjà inscrits à un planning pour cette date.');
+
+        $this->assertDatabaseMissing('planning_items', [
+            'planning_id' => $targetPlanning->id,
+            'employe_id' => $employee->id,
+        ]);
+    }
+
+    public function test_unauthenticated_users_cannot_add_employees_to_an_existing_planning(): void
+    {
+        $planning = Planning::create([
+            'dps' => today()->addDays(10)->toDateString(),
+            'hps' => '06:00',
+        ]);
+        $employee = $this->createEmployee('CU-005', 'CUISINE');
+
+        $this->postJson("/plannings/{$planning->id}/employees", [
+            'employee_ids' => [$employee->id],
+        ])->assertUnauthorized();
+
+        $this->assertDatabaseMissing('planning_items', [
+            'planning_id' => $planning->id,
+            'employe_id' => $employee->id,
+        ]);
+    }
+
+    private function createEmployee(string $matricule, string $service): Employe
+    {
+        return Employe::create([
+            'matricule' => $matricule,
+            'service' => $service,
+            'nom' => "Employé {$matricule}",
+            'telephone' => '00000000',
+            'lieu_ramassage' => 'Centre',
+            'pnt_adm' => 'ADM',
+            'pnt_dec' => 'Décalé',
+        ]);
+    }
 }
