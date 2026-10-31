@@ -29,9 +29,13 @@ class UserManagementTest extends TestCase
             ->assertJsonPath('user.service', 'CUISINE')
             ->assertJsonPath('user.must_change_password', true);
 
+        $initialPassword = $response->json('initial_password');
+        $this->assertIsString($initialPassword);
+        $this->assertNotSame('0000', $initialPassword);
+
         $this->assertDatabaseHas('users', ['name' => 'chef-cuisine', 'service' => 'CUISINE']);
         $createdUser = User::where('name', 'chef-cuisine')->firstOrFail();
-        $this->assertTrue(Hash::check('0000', $createdUser->password));
+        $this->assertTrue(Hash::check($initialPassword, $createdUser->password));
     }
 
     public function test_new_user_cannot_use_protected_endpoints_before_changing_password(): void

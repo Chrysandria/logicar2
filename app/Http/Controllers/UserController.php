@@ -30,22 +30,24 @@ class UserController extends Controller
             'service' => ['required', 'string', 'max:255'],
         ]);
 
+        $initialPassword = bin2hex(random_bytes(16));
         $user = User::create([
             'name' => $validated['name'],
             'service' => $validated['service'],
-            'password' => '0000',
+            'password' => $initialPassword,
             'must_change_password' => true,
         ]);
 
         return response()->json([
             'message' => 'Utilisateur créé avec succès.',
+            'initial_password' => $initialPassword,
             'user' => [
                 'id' => $user->id,
                 'name' => $user->name,
                 'service' => $user->service,
                 'must_change_password' => $user->must_change_password,
             ],
-        ], 201);
+        ], 201)->header('Cache-Control', 'no-store, private');
     }
 
     public function destroy(User $user): JsonResponse

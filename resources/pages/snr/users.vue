@@ -6,6 +6,15 @@
             <p>Créez et supprimez les comptes d’accès aux services LogiCar.</p>
         </div>
 
+        <div v-if="initialPassword" class="alert alert-success d-flex align-items-start justify-content-between gap-3" role="status">
+            <div>
+                <strong>Mot de passe temporaire</strong>
+                <div class="small">Transmettez-le à l’utilisateur : il ne sera plus affiché après avoir quitté cette page.</div>
+                <code class="d-block mt-2 user-select-all text-break">{{ initialPassword }}</code>
+            </div>
+            <button type="button" class="btn-close" aria-label="Masquer le mot de passe" @click="initialPassword = ''"></button>
+        </div>
+
         <div class="row g-3 mb-4">
             <div class="col-sm-6 col-lg-4">
                 <div class="surface-card stat-card d-flex align-items-center gap-3">
@@ -97,7 +106,7 @@
                     <div class="modal-body row g-3">
                         <div class="col-12">
                             <div class="alert alert-info mb-0">
-                                Mot de passe temporaire : <strong>0000</strong>. L’utilisateur devra le modifier dès sa première connexion.
+                                Un mot de passe temporaire aléatoire sera généré. L’utilisateur devra le modifier dès sa première connexion.
                             </div>
                         </div>
                         <div class="col-12">
@@ -139,6 +148,7 @@ const search = ref("");
 const loading = ref(true);
 const saving = ref(false);
 const errorMessage = ref("");
+const initialPassword = ref("");
 const modal = ref(null);
 const form = reactive({
     name: "",
@@ -193,6 +203,7 @@ async function submitUser() {
         });
 
         users.value = [data.user, ...users.value];
+        initialPassword.value = data.initial_password;
         Modal.getOrCreateInstance(document.getElementById("userModal")).hide();
         useAlert("Succès", data.message || "Utilisateur créé.", "success");
     } catch (error) {

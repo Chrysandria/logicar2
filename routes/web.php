@@ -15,12 +15,10 @@ use App\Http\Middleware\EnsurePasswordChanged;
 use App\Http\Middleware\EnsureSnr;
 use Illuminate\Support\Facades\Route;
 
-Route::get('/', function () {
-    return view('index');
-})->name('login');
+Route::view('/', 'index')->name('login');
 
 Route::prefix('/auth')->controller(AuthController::class)->group(function () {
-    Route::post('/login', 'login');
+    Route::post('/login', 'login')->middleware('throttle:login');
     Route::post('/logout', 'logout');
     Route::get('/me', 'user');
 });
@@ -55,6 +53,4 @@ Route::middleware('auth')->group(function () {
     });
 });
 
-Route::get('/{any}', function () {
-    return view('index');
-})->where('any', '.*');
+Route::view('/{any}', 'index')->where('any', '.*');
